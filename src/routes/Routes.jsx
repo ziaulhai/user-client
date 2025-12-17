@@ -46,6 +46,7 @@ import UpdateDonationRequest from "../components/Dashboard/UpdateDonationRequest
 import FundingPage from "../components/Dashboard/FundingPage";
 import AdminFundingPage from "../components/Dashboard/Admin/AdminFundingPage";
 import AdminAndVolunteerRoute from "./AdminAndVolunteerRoute";
+import WhoWeAre from "../pages/WhoWeAre";
 
 // --- অ্যাডমিন ইম্পোর্ট ---
 
@@ -109,6 +110,10 @@ const router = createBrowserRouter([
                 element: <ContactUs />,
             },
            
+            {
+             path: "/who-we-are",
+            element: <WhoWeAre />
+            },
 
             // ২. পাবলিক ডোনেশন রিকোয়েস্ট রুট
 
