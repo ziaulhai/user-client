@@ -97,7 +97,7 @@ const PublicHome = () => {
                                     <img 
                                         src={blog.thumbnail || "https://i.ibb.co/3k1w2c7/blog-default.jpg"} 
                                         alt={blog.title} 
-                                        className="w-full h-40 object-cover"
+                                        className="w-full h-72 object-cover"
                                     />
                                     <div className="p-4">
                                         <h3 className="text-xl font-bold text-gray-800 mb-2 line-clamp-2">

@@ -1,9 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import useAuth from '../../../hooks/useAuth';
 import useAxiosSecure from '../../../hooks/useAxiosSecure';
 import Swal from 'sweetalert2';
-import { FileText, Type, MessageSquare, Save, User, Upload } from 'lucide-react';
+import { FileText, Type, MessageSquare, Save, User, Upload, CheckCircle } from 'lucide-react';
 
 // ImgBB API URL
 const image_hosting_api = `https://api.imgbb.com/1/upload?key=${import.meta.env.VITE_IMGBB_API_KEY}`;
@@ -12,6 +12,9 @@ const CreateBlogPost = () => {
     const { user } = useAuth();
     const axiosSecure = useAxiosSecure();
     
+    const [imageUrl, setImageUrl] = useState('');
+    const [uploading, setUploading] = useState(false);
+    
     const { 
         register, 
         handleSubmit, 
@@ -19,50 +22,47 @@ const CreateBlogPost = () => {
         formState: { isSubmitting } 
     } = useForm();
 
-    const onSubmit = async (data) => {
-        let imageUrl = '';
-        
+    // ১. ছবি অটো-আপলোড হ্যান্ডেলার
+    const handleAutoImageUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append('image', file);
+
         try {
-            // ১. ছবি আপলোড লজিক (যদি ছবি থাকে তবেই আপলোড হবে, নাহলে স্কিপ করবে)
-            const imageFile = data.thumbnail?.[0]; 
-            
-            if (imageFile) {
-                Swal.fire({
-                    title: "ছবি আপলোড হচ্ছে...",
-                    text: "অনুগ্রহ করে অপেক্ষা করুন।",
-                    allowOutsideClick: false,
-                    didOpen: () => {
-                        Swal.showLoading();
-                    }
-                });
+            setUploading(true);
+            const res = await fetch(image_hosting_api, {
+                method: 'POST',
+                body: formData
+            });
+            const data = await res.json();
 
-                const formData = new FormData();
-                formData.append('image', imageFile);
-
-                const imgbbRes = await fetch(image_hosting_api, {
-                    method: 'POST',
-                    body: formData
-                });
-
-                const imgbbData = await imgbbRes.json();
-                
-                if (imgbbData.success) {
-                    imageUrl = imgbbData.data.url;
-                }
+            if (data.success) {
+                setImageUrl(data.data.display_url || data.data.url);
+            } else {
+                Swal.fire("এরর!", "ছবি আপলোড ব্যর্থ হয়েছে।", "error");
             }
+        } catch (error) {
+            console.error("Image upload error:", error);
+            Swal.fire("এরর!", "সার্ভার সমস্যা, আবার চেষ্টা করুন।", "error");
+        } finally {
+            setUploading(false);
+        }
+    };
 
-            // ২. ব্লগ পোস্ট ডেটা তৈরি (সব ফিল্ড এখন ঐচ্ছিক)
+    const onSubmit = async (data) => {
+        try {
             const blogPost = {
-                title: data.title || "বিনা শিরোনামের পোস্ট", // টাইটেল না দিলে ডিফল্ট টেক্সট
-                thumbnail: imageUrl || "", // ছবি না থাকলে ফাঁকা থাকবে
-                content: data.content || "", // কন্টেন্ট না থাকলে ফাঁকা থাকবে
+                title: data.title || "বিনা শিরোনামের পোস্ট",
+                thumbnail: imageUrl || "", 
+                content: data.content || "",
                 status: data.status,
                 authorEmail: user?.email,
                 authorName: user?.displayName || 'Admin',
                 createdAt: new Date(),
             };
 
-            // ৩. সার্ভারে ডেটা পাঠানো
             const res = await axiosSecure.post('/api/v1/content/blog-posts', blogPost); 
 
             if (res.data.insertedId) {
@@ -71,7 +71,8 @@ const CreateBlogPost = () => {
                     text: "ব্লগ পোস্টটি তৈরি করা হয়েছে।",
                     icon: "success"
                 });
-                reset(); // ফর্ম রিসেট করা
+                reset(); 
+                setImageUrl(''); 
             }
         } catch (error) {
             console.error("Error creating blog post:", error);
@@ -91,7 +92,6 @@ const CreateBlogPost = () => {
 
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
 
-                {/* পোস্টের শিরোনাম - (Required সরানো হয়েছে) */}
                 <div className="form-control">
                     <label className="label">
                         <span className="label-text font-semibold flex items-center">
@@ -106,7 +106,7 @@ const CreateBlogPost = () => {
                     />
                 </div>
 
-                {/* থাম্বনেইল ছবি - (Required সরানো হয়েছে) */}
+                {/* থাম্বনেইল ছবি - সংশোধিত onChange */}
                 <div className="form-control">
                     <label className="label">
                         <span className="label-text font-semibold flex items-center">
@@ -117,11 +117,29 @@ const CreateBlogPost = () => {
                         type="file" 
                         accept="image/*" 
                         className="file-input file-input-bordered file-input-error w-full" 
-                        {...register("thumbnail")} 
+                        {...register("thumbnail", {
+                            onChange: (e) => { handleAutoImageUpload(e) }
+                        })}
                     />
+                    
+                    <div className="mt-2">
+                        {uploading && (
+                            <div className="flex items-center gap-2 text-blue-600 text-sm">
+                                <span className="loading loading-spinner loading-xs"></span>
+                                ছবি আপলোড হচ্ছে...
+                            </div>
+                        )}
+                        {!uploading && imageUrl && (
+                            <div className="flex items-center gap-2">
+                                <div className="text-green-600 text-sm font-semibold flex items-center">
+                                    <CheckCircle size={16} className="mr-1" /> ছবি আপলোড সফল!
+                                </div>
+                                <img src={imageUrl} alt="Preview" className="w-16 h-10 object-cover rounded border" />
+                            </div>
+                        )}
+                    </div>
                 </div>
 
-                {/* বিস্তারিত কনটেন্ট - (Required সরানো হয়েছে) */}
                 <div className="form-control">
                     <label className="label">
                         <span className="label-text font-semibold flex items-center">
@@ -136,7 +154,6 @@ const CreateBlogPost = () => {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {/* স্ট্যাটাস */}
                     <div className="form-control">
                         <label className="label"><span className="label-text font-semibold flex items-center"><Save size={18} className='mr-1' /> স্ট্যাটাস</span></label>
                         <select 
@@ -163,7 +180,7 @@ const CreateBlogPost = () => {
                 <div className="form-control pt-4">
                     <button 
                         type="submit" 
-                        disabled={isSubmitting} 
+                        disabled={isSubmitting || uploading} 
                         className="btn bg-red-600 text-white text-lg hover:bg-red-700 w-full"
                     >
                         {isSubmitting ? (
