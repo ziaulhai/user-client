@@ -1,0 +1,24 @@
+@import "tailwindcss";
+@plugin "daisyui";
+
+/* Tailwind ইউটিলিটি ক্লাস লোড করবে */
+@tailwind utilities;
+
+
+body {
+    /* সুন্দর বাংলা ফন্ট সেট করা হলো */
+    font-family: 'Siyam Rupali', 'Anek Bangla', 'Arial', sans-serif;
+    
+    /* পঠনযোগ্যতা বাড়ানোর জন্য লাইন হাইট সেট করুন */
+    line-height: 1.6;
+}
+
+/* আপনি চাইলে হেডিং বাটন ইত্যাদির জন্য Anek Bangla ব্যবহার করতে পারেন
+   যদি আপনার হেডিং বাটনগুলি h1, h2, বা button ট্যাগ ব্যবহার করে
+*/
+h1, h2, h3, h4, h5, h6, button {
+    font-family: 'Anek Bangla', 'Siyam Rupali', sans-serif;
+    /* ফন্ট ওয়েট অ্যাডজাস্ট করতে পারেন */
+    font-weight: 600; 
+}
+

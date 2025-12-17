@@ -1,0 +1,181 @@
+import React from 'react';
+import { useForm } from 'react-hook-form';
+import useAuth from '../../../hooks/useAuth';
+import useAxiosSecure from '../../../hooks/useAxiosSecure';
+import Swal from 'sweetalert2';
+import { FileText, Type, MessageSquare, Save, User, Upload } from 'lucide-react';
+
+// ImgBB API URL
+const image_hosting_api = `https://api.imgbb.com/1/upload?key=${import.meta.env.VITE_IMGBB_API_KEY}`;
+
+const CreateBlogPost = () => {
+    const { user } = useAuth();
+    const axiosSecure = useAxiosSecure();
+    
+    const { 
+        register, 
+        handleSubmit, 
+        reset, 
+        formState: { isSubmitting } 
+    } = useForm();
+
+    const onSubmit = async (data) => {
+        let imageUrl = '';
+        
+        try {
+            // ১. ছবি আপলোড লজিক (যদি ছবি থাকে তবেই আপলোড হবে, নাহলে স্কিপ করবে)
+            const imageFile = data.thumbnail?.[0]; 
+            
+            if (imageFile) {
+                Swal.fire({
+                    title: "ছবি আপলোড হচ্ছে...",
+                    text: "অনুগ্রহ করে অপেক্ষা করুন।",
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
+                const formData = new FormData();
+                formData.append('image', imageFile);
+
+                const imgbbRes = await fetch(image_hosting_api, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const imgbbData = await imgbbRes.json();
+                
+                if (imgbbData.success) {
+                    imageUrl = imgbbData.data.url;
+                }
+            }
+
+            // ২. ব্লগ পোস্ট ডেটা তৈরি (সব ফিল্ড এখন ঐচ্ছিক)
+            const blogPost = {
+                title: data.title || "বিনা শিরোনামের পোস্ট", // টাইটেল না দিলে ডিফল্ট টেক্সট
+                thumbnail: imageUrl || "", // ছবি না থাকলে ফাঁকা থাকবে
+                content: data.content || "", // কন্টেন্ট না থাকলে ফাঁকা থাকবে
+                status: data.status,
+                authorEmail: user?.email,
+                authorName: user?.displayName || 'Admin',
+                createdAt: new Date(),
+            };
+
+            // ৩. সার্ভারে ডেটা পাঠানো
+            const res = await axiosSecure.post('/api/v1/content/blog-posts', blogPost); 
+
+            if (res.data.insertedId) {
+                Swal.fire({
+                    title: "সফল!",
+                    text: "ব্লগ পোস্টটি তৈরি করা হয়েছে।",
+                    icon: "success"
+                });
+                reset(); // ফর্ম রিসেট করা
+            }
+        } catch (error) {
+            console.error("Error creating blog post:", error);
+            Swal.fire({
+                title: "এরর!",
+                text: error.response?.data?.message || "ব্লগ পোস্ট তৈরি করা সম্ভব হয়নি।",
+                icon: "error"
+            });
+        }
+    };
+
+    return (
+        <div className="p-4 md:p-8 rounded-xl shadow-2xl bg-white max-w-5xl mx-auto">
+            <h1 className="text-3xl font-bold text-red-600 mb-6 border-b pb-2 flex items-center">
+                <FileText className='mr-2' size={30} /> নতুন ব্লগ পোস্ট তৈরি করুন
+            </h1>
+
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+
+                {/* পোস্টের শিরোনাম - (Required সরানো হয়েছে) */}
+                <div className="form-control">
+                    <label className="label">
+                        <span className="label-text font-semibold flex items-center">
+                            <Type size={18} className='mr-1' /> পোস্টের শিরোনাম
+                        </span>
+                    </label>
+                    <input 
+                        type="text" 
+                        placeholder="শিরোনাম লিখুন (ঐচ্ছিক)" 
+                        className="input input-bordered w-full" 
+                        {...register("title")} 
+                    />
+                </div>
+
+                {/* থাম্বনেইল ছবি - (Required সরানো হয়েছে) */}
+                <div className="form-control">
+                    <label className="label">
+                        <span className="label-text font-semibold flex items-center">
+                            <Upload size={18} className='mr-1' /> থাম্বনেইল ছবি (ঐচ্ছিক)
+                        </span>
+                    </label>
+                    <input 
+                        type="file" 
+                        accept="image/*" 
+                        className="file-input file-input-bordered file-input-error w-full" 
+                        {...register("thumbnail")} 
+                    />
+                </div>
+
+                {/* বিস্তারিত কনটেন্ট - (Required সরানো হয়েছে) */}
+                <div className="form-control">
+                    <label className="label">
+                        <span className="label-text font-semibold flex items-center">
+                            <MessageSquare size={18} className='mr-1' /> বিস্তারিত কনটেন্ট
+                        </span>
+                    </label>
+                    <textarea 
+                        className="textarea textarea-bordered h-48 w-full" 
+                        placeholder="আপনার কনটেন্ট লিখুন (ঐচ্ছিক)..." 
+                        {...register("content")}
+                    ></textarea>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {/* স্ট্যাটাস */}
+                    <div className="form-control">
+                        <label className="label"><span className="label-text font-semibold flex items-center"><Save size={18} className='mr-1' /> স্ট্যাটাস</span></label>
+                        <select 
+                            className="select select-bordered" 
+                            {...register("status")}
+                            defaultValue="draft" 
+                        >
+                            <option value="draft">Draft (খসড়া)</option>
+                            <option value="published">Published (প্রকাশিত)</option>
+                        </select>
+                    </div>
+
+                    <div className="form-control">
+                        <label className="label"><span className="label-text font-semibold flex items-center"><User size={18} className='mr-1' /> লেখক</span></label>
+                        <input type="text" value={user?.displayName || 'Admin'} readOnly className="input input-bordered bg-gray-100" />
+                    </div>
+
+                    <div className="form-control">
+                        <label className="label"><span className="label-text font-semibold flex items-center"><User size={18} className='mr-1' /> ইমেল</span></label>
+                        <input type="email" value={user?.email || ''} readOnly className="input input-bordered bg-gray-100" />
+                    </div>
+                </div>
+
+                <div className="form-control pt-4">
+                    <button 
+                        type="submit" 
+                        disabled={isSubmitting} 
+                        className="btn bg-red-600 text-white text-lg hover:bg-red-700 w-full"
+                    >
+                        {isSubmitting ? (
+                            <><span className="loading loading-spinner"></span> প্রসেস হচ্ছে...</>
+                        ) : (
+                            'ব্লগ পোস্ট তৈরি করুন'
+                        )}
+                    </button>
+                </div>
+            </form>
+        </div>
+    );
+};
+
+export default CreateBlogPost;
