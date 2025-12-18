@@ -11,6 +11,8 @@ import UpdateBlogPost from "../components/Dashboard/Admin/UpdateBlogPost";
 
 import ContactUs from "../pages/ContactUs";
 
+import OurMission from "../pages/OurMission";
+
 import App from "../App";
 
 import Login from "../pages/Login";
@@ -115,6 +117,10 @@ const router = createBrowserRouter([
             element: <WhoWeAre />
             },
 
+            {
+                path: "/mission",
+                element: <OurMission />
+            },
             // ২. পাবলিক ডোনেশন রিকোয়েস্ট রুট
 
             {
