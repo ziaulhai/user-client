@@ -23,7 +23,7 @@ const Navbar = () => {
         if (user?.photoURL) {
             return `${user.photoURL}?t=${renderKey}`; 
         }
-        return 'https://i.ibb.co/6P2L1J5/default-avatar.png';
+        return 'https://i.ibb.co.com/WNyfY5cS/profile-1.png';
     };
 
     // Language Handler

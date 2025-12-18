@@ -113,7 +113,7 @@ const Signup = () => {
         const { file, url } = await getCroppedImg();
         setImageFile(file);
         setImagePreview(url);
-        setImageError(""); // ক্রপ সেভ হলে এরর ক্লিয়ার হবে
+        setImageError(""); // ক্রপ সেভ হলে এরর ক্লিয়ার হবে
         setShowCropper(false);
     };
 
@@ -133,7 +133,8 @@ const Signup = () => {
             const imgbbData = await imgbbResponse.json();
             if (imgbbData.success) {
                 setIsUploading(false);
-                return imgbbData.data.url;
+                // 🔥 এখানে .display_url ব্যবহার করা হয়েছে সরাসরি ছবির লিঙ্কের জন্য
+                return imgbbData.data.display_url;
             } else {
                 throw new Error(imgbbData.error?.message || "ইমেজ আপলোডে ব্যর্থতা।");
             }
@@ -146,7 +147,7 @@ const Signup = () => {
     const onSubmit = async (data) => {
         const { name, email, password, bloodGroup, district, upazila, phoneNumber } = data;
 
-        // যদি সাবমিট করার সময়ও ছবি না থাকে
+        // যদি সাবমিট করার সময়ও ছবি না থাকে
         if (!imageFile) {
             setImageError("অনুগ্রহ করে ১ মেগাবাইটের কম সাইজের একটি প্রোফাইল ছবি দিন।");
             return;
@@ -166,9 +167,17 @@ const Signup = () => {
             await reloadUser();
 
             const userInfo = {
-                name, email, avatar: finalPhotoURL, bloodGroup,
-                district, upazila, phoneNumber, role: 'donor',
-                status: 'active', createdAt: new Date()
+                name, 
+                email, 
+                // 🔥 ডোনার সার্চের সাথে মিল রাখার জন্য avatar-এর বদলে photoURL দেওয়া হয়েছে
+                photoURL: finalPhotoURL, 
+                bloodGroup,
+                district, 
+                upazila, 
+                phoneNumber, 
+                role: 'donor',
+                status: 'active', 
+                createdAt: new Date()
             };
 
             const res = await axiosPublic.post('/api/v1/auth/register', userInfo); 
@@ -215,7 +224,7 @@ const Signup = () => {
                 // ছবি ১ এমবি-র বেশি হলে তাৎক্ষণিকভাবে এরর মেসেজ সেট হবে
                 setImageError('দুঃখিত! ছবিটি ১ মেগাবাইটের বেশি। ছোট সাইজের ছবি দিন।');
                 
-                // স্টেট ক্লিয়ার করা যাতে আগের ছবি না থাকে
+                // স্টেট ক্লিয়ার করা যাতে আগের ছবি না থাকে
                 e.target.value = null; 
                 setImageFile(null);
                 setImagePreview(null);

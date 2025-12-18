@@ -50,7 +50,7 @@ const Footer = () => {
                     <nav className="flex flex-col items-center lg:items-start">
                         <header className="text-red-500 font-bold mb-6 uppercase text-sm tracking-widest border-b border-red-900/50 pb-1 w-fit">কোম্পানি</header>
                         <div className="flex flex-col gap-4 text-center lg:text-left">
-                            <Link to="/about" className="text-gray-400 hover:text-red-400 hover:pl-2 transition-all duration-300 text-[15px]">আমাদের সম্পর্কে</Link>
+                            <Link to="/who-we-are" className="text-gray-400 hover:text-red-400 hover:pl-2 transition-all duration-300 text-[15px]">আমাদের সম্পর্কে</Link>
                             <Link to="/contact" className="text-gray-400 hover:text-red-400 hover:pl-2 transition-all duration-300 text-[15px]">যোগাযোগ</Link>
                         </div>
                     </nav> 

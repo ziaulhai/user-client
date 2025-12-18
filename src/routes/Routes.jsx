@@ -9,9 +9,11 @@ import PublicBlogPosts from "../pages/PublicBlogPosts";
 
 import UpdateBlogPost from "../components/Dashboard/Admin/UpdateBlogPost";
 
-import ContactUs from "../pages/ContactUs";
 
 import OurMission from "../pages/OurMission";
+
+import TermsAndConditions from "../pages/TermsAndConditions";
+import PrivacyPolicy from "../pages/PrivacyPolicy";
 
 import App from "../App";
 
@@ -49,6 +51,7 @@ import FundingPage from "../components/Dashboard/FundingPage";
 import AdminFundingPage from "../components/Dashboard/Admin/AdminFundingPage";
 import AdminAndVolunteerRoute from "./AdminAndVolunteerRoute";
 import WhoWeAre from "../pages/WhoWeAre";
+import Contact from "../pages/Contact";
 
 // --- অ্যাডমিন ইম্পোর্ট ---
 
@@ -108,13 +111,24 @@ const router = createBrowserRouter([
             },
 
             {
-                path: "contact-us", // URL হবে /contact
-                element: <ContactUs />,
+                path: "/contact", // URL হবে /contact
+                element: <Contact />,
             },
            
             {
              path: "/who-we-are",
             element: <WhoWeAre />
+            },
+
+            {
+             path: "/terms",
+            element: <TermsAndConditions />
+            },
+
+
+             {
+             path: "/privacy",
+            element: <PrivacyPolicy />
             },
 
             {
