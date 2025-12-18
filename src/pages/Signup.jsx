@@ -1,38 +1,41 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
-import { toast } from 'react-hot-toast';
-import { Upload } from 'lucide-react';
+import { Upload, X, Scissors } from 'lucide-react'; 
 import localforage from 'localforage';
+import Cropper from 'react-easy-crop'; 
 
-// কাস্টম হুক ইমপোর্ট করা হলো
+// কাস্টম হুক ইমপোর্ট
 import useAuth from '../hooks/useAuth';
 import useAxiosPublic from '../hooks/useAxiosPublic';
 import useDistrictsAndUpazilas from '../hooks/useDistrictsAndUpazilas';
 
-// 🔥 ImgBB API Key এবং URL
+// ImgBB API
 const ImgBB_API_KEY = import.meta.env.VITE_IMGBB_API_KEY; 
 const ImgBB_URL = `https://api.imgbb.com/1/upload?key=${ImgBB_API_KEY}`;
-
 
 const Signup = () => {
     const { createUser, updateUserProfile, reloadUser } = useAuth();
     const axiosPublic = useAxiosPublic();
     const navigate = useNavigate();
 
-    // নতুন স্টেট যোগ করা হলো: রেজিস্ট্রেশনের জন্য লোডিং
     const [isRegistering, setIsRegistering] = useState(false);
-    // ইমেইল চেক করার জন্য স্টেট
     const [emailError, setEmailError] = useState("");
+    const [imageError, setImageError] = useState(""); // নতুন স্টেট: ছবির এরর দেখানোর জন্য
 
-    // react-hook-form সেটআপ
     const { register, handleSubmit, formState: { errors }, reset, watch, setValue } = useForm();
 
-    // ইমেজ ফাইল এবং আপলোড লোডিং ম্যানেজমেন্টের জন্য স্টেট
     const [imageFile, setImageFile] = useState(null);
+    const [imagePreview, setImagePreview] = useState(null); 
     const [isUploading, setIsUploading] = useState(false);
 
-    // জেলা ও উপজেলার ডেটা লোড করার জন্য কাস্টম হুক ব্যবহার
+    // --- ক্রপার স্টেট ---
+    const [crop, setCrop] = useState({ x: 0, y: 0 });
+    const [zoom, setZoom] = useState(1);
+    const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
+    const [showCropper, setShowCropper] = useState(false);
+    const [tempImage, setTempImage] = useState(null);
+
     const {
         districts,
         upazilas,
@@ -40,11 +43,9 @@ const Signup = () => {
         setSelectedDistrict
     } = useDistrictsAndUpazilas();
 
-    // ফর্ম থেকে নির্বাচিত ভ্যালু পর্যবেক্ষণ করা
     const selectedDistrictName = watch('district');
-    const password = watch('password'); // কনফার্ম পাসওয়ার্ড চেক করার জন্য
+    const password = watch('password'); 
 
-    // জেলা পরিবর্তন হলে, উপজেলা ভ্যালু রিসেট করা
     useEffect(() => {
         if (selectedDistrictName) {
             setSelectedDistrict(selectedDistrictName);
@@ -52,13 +53,11 @@ const Signup = () => {
         }
     }, [selectedDistrictName, setSelectedDistrict, setValue]);
 
-    // --- 🔥 পরিবর্তন ১: ইমেইল তৎক্ষণাৎ চেক করার ফাংশন ---
     const handleEmailBlur = async (e) => {
         const email = e.target.value;
         if (!email) return;
 
         try {
-            // আপনার ব্যাকএন্ডে এই রুটটি থাকতে হবে যা চেক করবে ইমেইল আছে কি না
             const res = await axiosPublic.get(`/api/v1/users/check-email/${email}`);
             if (res.data.exists) {
                 setEmailError("এই ইমেইলটি ইতিমধ্যে ব্যবহার করা হয়েছে। অনুগ্রহ করে অন্য ইমেইল দিন।");
@@ -70,7 +69,54 @@ const Signup = () => {
         }
     };
 
-    // --- ImgBB তে ইমেজ আপলোড ফাংশন ---
+    // --- ইমেজ ক্রপিং ফাংশন ---
+    const onCropComplete = useCallback((_croppedArea, croppedAreaPixels) => {
+        setCroppedAreaPixels(croppedAreaPixels);
+    }, []);
+
+    const getCroppedImg = async () => {
+        try {
+            const image = new Image();
+            image.src = tempImage;
+            await new Promise((resolve) => (image.onload = resolve));
+
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+
+            canvas.width = croppedAreaPixels.width;
+            canvas.height = croppedAreaPixels.height;
+
+            ctx.drawImage(
+                image,
+                croppedAreaPixels.x,
+                croppedAreaPixels.y,
+                croppedAreaPixels.width,
+                croppedAreaPixels.height,
+                0,
+                0,
+                croppedAreaPixels.width,
+                croppedAreaPixels.height
+            );
+
+            return new Promise((resolve) => {
+                canvas.toBlob((blob) => {
+                    const file = new File([blob], "profile.jpg", { type: "image/jpeg" });
+                    resolve({ file, url: URL.createObjectURL(blob) });
+                }, 'image/jpeg');
+            });
+        } catch (e) {
+            console.error(e);
+        }
+    };
+
+    const handleCropSave = async () => {
+        const { file, url } = await getCroppedImg();
+        setImageFile(file);
+        setImagePreview(url);
+        setImageError(""); // ক্রপ সেভ হলে এরর ক্লিয়ার হবে
+        setShowCropper(false);
+    };
+
     const uploadImageToImgBB = async (file) => {
         setIsUploading(true);
         const formData = new FormData();
@@ -82,99 +128,68 @@ const Signup = () => {
                 body: formData,
             });
 
-            if (!imgbbResponse.ok) {
-                throw new Error("ImgBB আপলোড ব্যর্থ হয়েছে");
-            }
+            if (!imgbbResponse.ok) throw new Error("ImgBB আপলোড ব্যর্থ হয়েছে");
 
             const imgbbData = await imgbbResponse.json();
-
             if (imgbbData.success) {
                 setIsUploading(false);
                 return imgbbData.data.url;
             } else {
                 throw new Error(imgbbData.error?.message || "ইমেজ আপলোডে ব্যর্থতা।");
             }
-
         } catch (error) {
-            console.error("ImgBB upload error:", error);
             setIsUploading(false);
             throw new Error(error.message || "ইমেজ আপলোডে ব্যর্থতা।");
         }
     };
 
-
     const onSubmit = async (data) => {
         const { name, email, password, bloodGroup, district, upazila, phoneNumber } = data;
 
-        // যদি আগে থেকেই ইমেইল এরর থাকে তবে সাবমিট হবে না
-        if (emailError) {
-            toast.error(emailError);
+        // যদি সাবমিট করার সময়ও ছবি না থাকে
+        if (!imageFile) {
+            setImageError("অনুগ্রহ করে ১ মেগাবাইটের কম সাইজের একটি প্রোফাইল ছবি দিন।");
             return;
         }
 
-        if (isUploading || dataLoading || isRegistering) {
-            toast.error("অনুগ্রহ করে অপেক্ষা করুন...");
-            return;
-        }
+        if (emailError) return;
 
-        let finalPhotoURL = "https://i.ibb.co.com/WNyfY5cS/profile-1.png"; 
+        if (isUploading || dataLoading || isRegistering) return;
+
         setIsRegistering(true);
 
         try {
-            // ১. ছবি আপলোড
-            if (imageFile) {
-                finalPhotoURL = await uploadImageToImgBB(imageFile);
-            }
+            const finalPhotoURL = await uploadImageToImgBB(imageFile);
 
-            // ২. Firebase User তৈরি
             await createUser(email, password);
-
-            // ৩. User Profile আপডেট
             await updateUserProfile(name, finalPhotoURL);
             await reloadUser();
 
-            // ৪. MongoDB তে ইউজার ডেটা সেভ করা
             const userInfo = {
-                name,
-                email,
-                avatar: finalPhotoURL,
-                bloodGroup,
-                district,
-                upazila,
-                phoneNumber,
-                role: 'donor',
-                status: 'active',
-                createdAt: new Date()
+                name, email, avatar: finalPhotoURL, bloodGroup,
+                district, upazila, phoneNumber, role: 'donor',
+                status: 'active', createdAt: new Date()
             };
 
             const res = await axiosPublic.post('/api/v1/auth/register', userInfo); 
 
             if (res.data.insertedId || res.data.message === 'User successfully saved') { 
-                if (res.data.token) {
-                    await localforage.setItem('access-token', res.data.token);
-                }
-
-                toast.success('রেজিস্ট্রেশন সফল!');
+                if (res.data.token) await localforage.setItem('access-token', res.data.token);
                 reset();
                 setImageFile(null);
+                setImagePreview(null);
                 navigate('/dashboard');
             } else {
-                toast.error('ডেটাবেসে সেভ করা সম্ভব হয়নি।');
+                setImageError("ডেটাবেসে সেভ করা সম্ভব হয়নি।");
             }
-
         } catch (error) {
-            console.error("Registration Error:", error);
-            let errorMessage = 'রেজিস্ট্রেশন ব্যর্থ হয়েছে।';
-            if (error.code === 'auth/email-already-in-use') {
-                errorMessage = 'ইমেইলটি ইতিমধ্যে ব্যবহার করা হয়েছে।';
-            }
-            toast.error(errorMessage);
+            console.error(error);
+            setImageError("রেজিস্ট্রেশন ব্যর্থ হয়েছে। ইমেইলটি ইতিমধ্যে ব্যবহার করা হতে পারে।");
         } finally {
             setIsRegistering(false);
         }
     };
 
-    // পাসওয়ার্ড ভ্যালিডেশনের রুলস
     const passwordRules = {
         required: "পাসওয়ার্ড আবশ্যক।",
         minLength: { value: 6, message: "পাসওয়ার্ড ন্যূনতম ৬ অক্ষরের হতে হবে।" },
@@ -190,6 +205,43 @@ const Signup = () => {
         }
     };
 
+    // --- সংশোধিত handleImageChange (ইনস্ট্যান্ট এরর চেক) ---
+    const handleImageChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const fileSizeInMB = file.size / (1024 * 1024);
+            
+            if (fileSizeInMB > 1) {
+                // ছবি ১ এমবি-র বেশি হলে তাৎক্ষণিকভাবে এরর মেসেজ সেট হবে
+                setImageError('দুঃখিত! ছবিটি ১ মেগাবাইটের বেশি। ছোট সাইজের ছবি দিন।');
+                
+                // স্টেট ক্লিয়ার করা যাতে আগের ছবি না থাকে
+                e.target.value = null; 
+                setImageFile(null);
+                setImagePreview(null);
+                return; 
+            }
+
+            // সাইজ ঠিক থাকলে এরর মুছে যাবে এবং ক্রপার আসবে
+            setImageError(""); 
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => {
+                setTempImage(reader.result);
+                setShowCropper(true);
+            };
+        }
+    };
+
+    const removeImage = () => {
+        setImageFile(null);
+        setImagePreview(null);
+        setTempImage(null);
+        setImageError("");
+        const inputElement = document.getElementById('avatar-upload-file');
+        if (inputElement) inputElement.value = null;
+    };
+
     if (dataLoading) {
         return (
             <div className="flex items-center justify-center min-h-screen bg-gray-100">
@@ -199,18 +251,48 @@ const Signup = () => {
         );
     }
 
-
     return (
         <div className="flex items-center justify-center min-h-screen bg-gray-100 p-4">
             <div className="w-full max-w-4xl bg-white p-6 md:p-10 rounded-xl shadow-2xl">
                 <h2 className="text-3xl font-bold text-center text-red-600 mb-8">রেজিস্ট্রেশন করুন</h2>
                 
+                {/* --- Cropper Modal --- */}
+                {showCropper && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4">
+                        <div className="bg-white w-full max-w-md rounded-lg overflow-hidden">
+                            <div className="p-4 border-b flex justify-between items-center">
+                                <h3 className="font-bold text-gray-700">ছবিটি ক্রপ করুন (১:১)</h3>
+                                <button onClick={() => setShowCropper(false)}><X size={20}/></button>
+                            </div>
+                            <div className="relative h-80 w-full bg-gray-200">
+                                <Cropper
+                                    image={tempImage}
+                                    crop={crop}
+                                    zoom={zoom}
+                                    aspect={1 / 1}
+                                    onCropChange={setCrop}
+                                    onCropComplete={onCropComplete}
+                                    onZoomChange={setZoom}
+                                />
+                            </div>
+                            <div className="p-4 bg-white flex gap-2">
+                                <button 
+                                    type="button"
+                                    onClick={() => setShowCropper(false)}
+                                    className="flex-1 py-2 bg-gray-200 rounded font-semibold"
+                                >বাতিল</button>
+                                <button 
+                                    type="button"
+                                    onClick={handleCropSave}
+                                    className="flex-1 py-2 bg-red-600 text-white rounded font-semibold"
+                                >সেভ করুন</button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-                    
-                    {/* --- 🔥 পরিবর্তন ২: ২-কলাম গ্রিড লেআউট --- */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-                        
-                        {/* নাম */}
                         <div>
                             <label className="block text-gray-700 font-semibold mb-1">নাম</label>
                             <input
@@ -222,7 +304,6 @@ const Signup = () => {
                             {errors.name && <span className="text-red-500 text-sm">{errors.name.message}</span>}
                         </div>
 
-                        {/* ইমেইল */}
                         <div>
                             <label className="block text-gray-700 font-semibold mb-1">ইমেইল</label>
                             <input
@@ -236,7 +317,6 @@ const Signup = () => {
                             {errors.email && <span className="text-red-500 text-sm">{errors.email.message}</span>}
                         </div>
 
-                        {/* ফোন নম্বর */}
                         <div>
                             <label className="block text-gray-700 font-semibold mb-1">ফোন নম্বর</label>
                             <input
@@ -248,7 +328,6 @@ const Signup = () => {
                             {errors.phoneNumber && <span className="text-red-500 text-sm">{errors.phoneNumber.message}</span>}
                         </div>
 
-                        {/* ব্লাড গ্রুপ */}
                         <div>
                             <label className="block text-gray-700 font-semibold mb-1">ব্লাড গ্রুপ</label>
                             <select
@@ -263,7 +342,6 @@ const Signup = () => {
                             {errors.bloodGroup && <span className="text-red-500 text-sm">{errors.bloodGroup.message}</span>}
                         </div>
 
-                        {/* জেলা */}
                         <div>
                             <label className="block text-gray-700 font-semibold mb-1">জেলা</label>
                             <select
@@ -278,7 +356,6 @@ const Signup = () => {
                             {errors.district && <span className="text-red-500 text-sm">{errors.district.message}</span>}
                         </div>
 
-                        {/* উপজেলা */}
                         <div>
                             <label className="block text-gray-700 font-semibold mb-1">উপজেলা</label>
                             <select
@@ -294,7 +371,6 @@ const Signup = () => {
                             {errors.upazila && <span className="text-red-500 text-sm">{errors.upazila.message}</span>}
                         </div>
 
-                        {/* পাসওয়ার্ড */}
                         <div>
                             <label className="block text-gray-700 font-semibold mb-1">পাসওয়ার্ড</label>
                             <input
@@ -306,13 +382,12 @@ const Signup = () => {
                             {errors.password && <span className="text-red-500 text-sm">{errors.password.message}</span>}
                         </div>
 
-                        {/* --- 🔥 পরিবর্তন ৩: কনফার্ম পাসওয়ার্ড ফিল্ড --- */}
                         <div>
                             <label className="block text-gray-700 font-semibold mb-1">কনফার্ম পাসওয়ার্ড</label>
                             <input
                                 type="password"
                                 {...register("confirmPassword", { 
-                                    required: "পাসওয়ার্ডটি পুনরায় টাইপ করুন।",
+                                    required: "পাসওয়ার্ডটি পুনরায় টাইপ করুন।",
                                     validate: (value) => value === password || "পাসওয়ার্ডটি মেলেনি।"
                                 })}
                                 className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-500"
@@ -320,36 +395,52 @@ const Signup = () => {
                             />
                             {errors.confirmPassword && <span className="text-red-500 text-sm">{errors.confirmPassword.message}</span>}
                         </div>
-
                     </div>
 
-                    {/* ফটো আপলোড (নিচে আলাদা রাখা হয়েছে বড় দেখানোর জন্য) */}
+                    {/* ফটো আপলোড সেকশন উইথ ইন-লাইন এরর */}
                     <div>
-                        <label className="block text-gray-700 font-semibold mb-1">প্রোফাইল ছবি (১ মেগাবাইটের কম)</label>
-                        <input
-                            type="file"
-                            id="avatar-upload-file"
-                            accept="image/*"
-                            className="hidden"
-                            onChange={(e) => {
-                                const file = e.target.files[0];
-                                if (file && file.size <= 1048576) {
-                                    setImageFile(file);
-                                } else if (file) {
-                                    toast.error('ছবি ১ মেগাবাইটের বড় হওয়া যাবে না।');
-                                    e.target.value = null;
-                                }
-                            }}
-                        />
-                        <button
-                            type="button"
-                            onClick={() => document.getElementById('avatar-upload-file').click()}
-                            disabled={isUploading || isRegistering}
-                            className="flex items-center justify-center px-4 py-2 border-2 border-dashed border-gray-300 rounded-lg hover:border-red-500 w-full transition"
-                        >
-                            <Upload size={18} className='mr-2 text-gray-500' />
-                            {imageFile ? imageFile.name : "ছবি নির্বাচন করুন"}
-                        </button>
+                        <label className="block text-gray-700 font-semibold mb-2 text-center sm:text-left">প্রোফাইল ছবি (১:১ রেশিও, ১ মেগাবাইটের কম)</label>
+                        <div className="flex flex-col sm:flex-row items-center gap-4">
+                            {imagePreview && (
+                                <div className="relative w-28 h-28 flex-shrink-0">
+                                    <img 
+                                        src={imagePreview} 
+                                        alt="Preview" 
+                                        className="w-full h-full object-cover rounded-full border-4 border-red-100 shadow-lg" 
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={removeImage}
+                                        className="absolute -top-1 -right-1 bg-red-600 text-white rounded-full p-1.5 hover:bg-red-800 transition shadow-lg"
+                                    >
+                                        <X size={14} />
+                                    </button>
+                                </div>
+                            )}
+
+                            <div className="w-full">
+                                <input
+                                    type="file"
+                                    id="avatar-upload-file"
+                                    accept="image/*"
+                                    className="hidden"
+                                    onChange={handleImageChange}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => document.getElementById('avatar-upload-file').click()}
+                                    disabled={isUploading || isRegistering}
+                                    className={`flex items-center justify-center px-4 py-3 border-2 border-dashed rounded-lg transition group w-full ${imageError ? 'border-red-500 bg-red-50' : 'border-gray-300 hover:border-red-500 hover:bg-red-50'}`}
+                                >
+                                    <Upload size={20} className={`mr-2 ${imageError ? 'text-red-500' : 'text-gray-500 group-hover:text-red-500'}`} />
+                                    <span className={`font-medium ${imageError ? 'text-red-600' : 'text-gray-600 group-hover:text-red-600'}`}>
+                                        {imageFile ? "অন্য ছবি পছন্দ করুন" : "ছবি নির্বাচন করুন"}
+                                    </span>
+                                </button>
+                                {/* ইনপুট ফিল্ডের ঠিক নিচে এরর মেসেজ */}
+                                {imageError && <p className="text-red-500 text-sm mt-2 font-semibold">{imageError}</p>}
+                            </div>
+                        </div>
                     </div>
 
                     <button
