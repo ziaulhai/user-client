@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
-import { ShieldOff } from 'lucide-react'; // নতুন আইকন
+import { ShieldOff, User, MapPin, Hospital, Calendar, MessageSquare, Send } from 'lucide-react'; 
 // --- প্রয়োজনীয় হুকস ও ইউটিলিটি ---
 import useAuth from '../../hooks/useAuth';
 import useAxiosSecure from '../../hooks/useAxiosSecure';
@@ -12,258 +12,269 @@ import useDistrictsAndUpazilas from '../../hooks/useDistrictsAndUpazilas';
 
 // --- ডেটা ---
 const bloodGroups = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
-// -----------------------------------------------------
 
 const CreateDonationRequest = () => {
-    const { user } = useAuth(); 
-    const axiosSecure = useAxiosSecure(); 
-    const navigate = useNavigate(); 
+    const { user } = useAuth(); 
+    const axiosSecure = useAxiosSecure(); 
+    const navigate = useNavigate(); 
 
-    // প্রোফাইল ডেটা লোড করার জন্য স্টেট
-    const [requesterProfile, setRequesterProfile] = useState(null);
-    const [loadingProfile, setLoadingProfile] = useState(true);
+    const [requesterProfile, setRequesterProfile] = useState(null);
+    const [loadingProfile, setLoadingProfile] = useState(true);
 
-    // নতুন জিওগ্রাফিক্যাল ডেটা হুক ব্যবহার:
-    const { 
-        districts, 
-        upazilas, 
-        loading: loadingGeo, 
-        setSelectedDistrict 
-    } = useDistrictsAndUpazilas();
+    const { 
+        districts, 
+        upazilas, 
+        loading: loadingGeo, 
+        setSelectedDistrict 
+    } = useDistrictsAndUpazilas();
 
-    // বর্তমান তারিখ ও সময় ডিফল্ট ভ্যালু হিসেবে নেওয়া
-    const { currentDate, currentTime } = getCurrentDateTime();
-    
-    const { 
-        register, 
-        handleSubmit, 
-        reset, 
-        watch, 
-        setValue, 
-        formState: { errors } 
-    } = useForm({
-        defaultValues: {
-            donationDate: currentDate, 
-            donationTime: currentTime, 
-        }
-    });
+    const { currentDate, currentTime } = getCurrentDateTime();
+    
+    const { 
+        register, 
+        handleSubmit, 
+        reset, 
+        watch, 
+        setValue, 
+        formState: { errors } 
+    } = useForm({
+        defaultValues: {
+            donationDate: currentDate, 
+            donationTime: currentTime, 
+        }
+    });
 
-    const watchedDistrictName = watch('recipientDistrict');
-    
-    // ১. অনুরোধকারীর প্রোফাইল ডেটা লোড করা (রোল চেক করার জন্য)
-    useEffect(() => {
-        // user?.email না থাকলে, প্রোফাইল লোড করার দরকার নেই, শুধু লোডিং অফ করুন
-        if (!user?.email) {
-            setLoadingProfile(false);
-            return;
-        }
+    const watchedDistrictName = watch('recipientDistrict');
+    
+    useEffect(() => {
+        if (!user?.email) {
+            setLoadingProfile(false);
+            return;
+        }
         
-        // প্রোফাইল লোড করুন
-        axiosSecure.get(`/api/v1/users/${user.email}`)
-            .then(res => {
-                setRequesterProfile(res.data);
-                setLoadingProfile(false);
-            })
-            .catch(error => {
-                console.error("Error loading requester profile:", error);
-                setLoadingProfile(false);
-            });
-    }, [user, axiosSecure]);
+        axiosSecure.get(`/api/v1/users/${user.email}`)
+            .then(res => {
+                setRequesterProfile(res.data);
+                setLoadingProfile(false);
+            })
+            .catch(error => {
+                console.error("Error loading requester profile:", error);
+                setLoadingProfile(false);
+            });
+    }, [user, axiosSecure]);
 
+    useEffect(() => {
+        if (watchedDistrictName) {
+            setSelectedDistrict(watchedDistrictName);
+            setValue('recipientUpazila', '');
+        } else {
+            setSelectedDistrict(null);
+        }
+    }, [watchedDistrictName, setSelectedDistrict, setValue]);
 
-    // ২. নির্বাচিত জেলার নাম পরিবর্তন হলে হুকের setSelectedDistrict আপডেট করা
-    useEffect(() => {
-        if (watchedDistrictName) {
-            setSelectedDistrict(watchedDistrictName);
-            setValue('recipientUpazila', '');
-        } else {
-            setSelectedDistrict(null);
-        }
-    }, [watchedDistrictName, setSelectedDistrict, setValue]);
+    const onSubmit = async (data) => {
+        const donationRequest = {
+            ...data,
+            requesterName: requesterProfile?.name || user?.displayName || 'Unknown',
+            requesterEmail: user?.email,
+            requestStatus: 'pending',
+            createdAt: new Date().toISOString(),
+        };
 
-
-    // ৩. ফর্ম সাবমিট হ্যান্ডেলার
-    const onSubmit = async (data) => {
-        const donationRequest = {
-            ...data,
-            requesterName: requesterProfile?.name || user?.displayName || 'Unknown',
-            requesterEmail: user?.email,
-            requestStatus: 'pending',
-            createdAt: new Date().toISOString(),
-        };
-
-        // নিরাপত্তা নিশ্চিত করার জন্য: ক্লায়েন্ট সাইডেও ডবল চেক
         if (requesterProfile?.role === 'donor') {
             Swal.fire({
-                title: "অনুমতি নেই!",
-                text: "ডোনার রোলের ইউজাররা রক্তদানের অনুরোধ তৈরি করতে পারে না।",
-                icon: "warning"
-            });
+                title: "অনুমতি নেই!",
+                text: "ডোনার রোলের ইউজাররা রক্তদানের অনুরোধ তৈরি করতে পারে না।",
+                icon: "warning"
+            });
             return;
         }
 
-        try {
-            // ত্রুটিমুক্ত POST রিকোয়েস্ট
-            const res = await axiosSecure.post('/api/v1/donation-requests', donationRequest); 
+        try {
+            const res = await axiosSecure.post('/api/v1/donation-requests', donationRequest); 
 
-            if (res.data.insertedId) {
-                Swal.fire({
-                    title: "সফল!",
-                    text: "রক্তদানের অনুরোধ সফলভাবে তৈরি করা হয়েছে।",
-                    icon: "success"
-                });
-                reset(); 
-                navigate('/dashboard/my-donation-requests'); 
-            }
-        } catch (error) {
-            console.error("Donation Request creation error:", error);
-            Swal.fire({
-                title: "এরর!",
-                text: error.response?.data?.message || "অনুরোধ তৈরি ব্যর্থ হয়েছে।",
-                icon: "error"
-            });
-        }
-    };
+            if (res.data.insertedId) {
+                Swal.fire({
+                    title: "সফল!",
+                    text: "রক্তদানের অনুরোধ সফলভাবে তৈরি করা হয়েছে।",
+                    icon: "success"
+                });
+                reset(); 
+                navigate('/dashboard/my-donation-requests'); 
+            }
+        } catch (error) {
+            console.error("Donation Request creation error:", error);
+            Swal.fire({
+                title: "এরর!",
+                text: error.response?.data?.message || "অনুরোধ তৈরি ব্যর্থ হয়েছে।",
+                icon: "error"
+            });
+        }
+    };
 
-    if (loadingProfile || loadingGeo) {
-        return <div className="text-center p-10"><span className="loading loading-spinner loading-lg text-red-600"></span></div>;
-    }
-    
-    // 🔥 অ্যাক্সেস গার্ড (নতুন সংযোজন)
-    if (requesterProfile?.role === 'donor') {
-        return (
-            <div className="p-10 min-h-[50vh] flex flex-col items-center justify-center bg-red-50 rounded-xl shadow-lg border border-red-300">
-                <ShieldOff className='text-red-600 mb-4' size={60} />
-                <h1 className="text-3xl font-extrabold text-red-600">🛑 অ্যাক্সেস নেই (অনুমতি অস্বীকার)!</h1>
-                <p className="mt-4 text-gray-700 text-center max-w-lg">
-                    আপনার বর্তমান রোল **"ডোনার"**। শুধুমাত্র **ভলান্টিয়ার** এবং **অ্যাডমিন** রোলের ইউজাররাই রক্তদানের অনুরোধ তৈরি করতে পারে।
-                </p>
-                <p className="mt-2 text-sm text-gray-500">
-                    ডোনার হিসাবে আপনি রক্ত ​​দান করতে পারবেন, কিন্তু অন্য কারো জন্য অনুরোধ তৈরি করতে পারবেন না।
-                </p>
-            </div>
-        );
+    if (loadingProfile || loadingGeo) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh]">
+                <span className="loading loading-spinner loading-lg text-red-600"></span>
+                <p className="mt-4 text-gray-500 animate-pulse">তথ্য লোড হচ্ছে...</p>
+            </div>
+        );
     }
-    // 🔥 অ্যাক্সেস গার্ড শেষ
     
-    // যদি রোল 'volunteer' বা 'admin' হয় তবে ফর্ম রেন্ডার হবে
-    return (
-        <div className="p-6 md:p-10 rounded-xl shadow-2xl bg-white max-w-5xl mx-auto">
-            <h1 className="text-3xl font-bold text-center text-red-600 mb-8">নতুন রক্তদানের অনুরোধ তৈরি করুন</h1>
+    if (requesterProfile?.role === 'donor') {
+        return (
+            <div className="max-w-2xl mx-auto mt-10 p-10 flex flex-col items-center justify-center bg-white rounded-3xl shadow-xl border border-red-100 text-center">
+                <div className="bg-red-50 p-6 rounded-full mb-6">
+                    <ShieldOff className='text-red-500' size={80} />
+                </div>
+                <h1 className="text-3xl font-black text-gray-800">অ্যাক্সেস সংরক্ষিত</h1>
+                <p className="mt-4 text-gray-600 leading-relaxed text-lg">
+                    দুঃখিত, আপনার রোল <span className="font-bold text-red-600 italic">"ডোনার"</span> হওয়ায় আপনি সরাসরি অনুরোধ তৈরি করতে পারছেন না। 
+                </p>
+                <div className="mt-6 p-4 bg-gray-50 rounded-xl text-sm text-gray-500 border border-dashed border-gray-300">
+                   অনুরোধ তৈরি করতে হলে আপনার একাউন্টটি ভলান্টিয়ার বা অ্যাডমিন রোলে থাকতে হবে।
+                </div>
+            </div>
+        );
+    }
+    
+    return (
+        <div className="max-w-6xl mx-auto p-4 md:p-8">
+            {/* হেডার সেকশন */}
+            <div className="mb-10 text-center">
+                <h1 className="text-4xl font-black text-gray-800 mb-3">নতুন রক্তদানের অনুরোধ</h1>
+                <p className="text-gray-500">নিচের ফর্মে সঠিক তথ্য প্রদান করে দ্রুত রক্তের ব্যবস্থা করুন।</p>
+                <div className="w-24 h-1.5 bg-red-600 mx-auto mt-4 rounded-full"></div>
+            </div>
 
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+                
+                {/* কার্ড ১: অনুরোধকারীর প্রোফাইল (ReadOnly) */}
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div className="bg-gray-50 px-6 py-4 border-b border-gray-100 flex items-center gap-2">
+                        <User size={20} className="text-red-600" />
+                        <h2 className="font-bold text-gray-700">অনুরোধকারীর তথ্য (স্থায়ী)</h2>
+                    </div>
+                    <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-1">
+                            <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">আপনার নাম</label>
+                            <input type="text" value={requesterProfile?.name || user?.displayName || 'Unknown'} disabled className="w-full bg-gray-50 border-gray-200 text-gray-600 rounded-lg px-4 py-3 cursor-not-allowed font-medium" />
+                        </div>
+                        <div className="space-y-1">
+                            <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">আপনার ইমেল</label>
+                            <input type="email" value={user?.email || ''} disabled className="w-full bg-gray-50 border-gray-200 text-gray-600 rounded-lg px-4 py-3 cursor-not-allowed font-medium" />
+                        </div>
+                    </div>
+                </div>
 
-                {/* রিকোয়েস্টকারীর তথ্য (Non-Editable) */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg border">
-                    <div className="form-control">
-                        <label className="label"><span className="label-text font-semibold">অনুরোধকারীর নাম</span></label>
-                        <input type="text" value={requesterProfile?.name || user?.displayName || 'Unknown'} disabled className="input input-bordered bg-gray-200" />
-                    </div>
-                    <div className="form-control">
-                        <label className="label"><span className="label-text font-semibold">অনুরোধকারীর ইমেল</span></label>
-                        <input type="email" value={user?.email || ''} disabled className="input input-bordered bg-gray-200" />
-                    </div>
-                </div>
+                {/* কার্ড ২: রোগীর তথ্য ও অবস্থান */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    
+                    {/* রোগীর বেসিক ইনফো */}
+                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 space-y-5">
+                        <div className="flex items-center gap-2 mb-2">
+                            <div className="p-2 bg-red-100 rounded-lg text-red-600"><User size={20}/></div>
+                            <h2 className="text-xl font-bold text-gray-800">রোগীর তথ্য</h2>
+                        </div>
 
-                {/* রোগীর তথ্য */}
-                <h2 className="text-xl font-semibold mt-6 border-b pb-2 text-gray-700">রোগীর প্রয়োজনীয় তথ্য</h2>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {/* রোগীর নাম */}
-                    <div className="form-control">
-                        <label className="label"><span className="label-text">রোগীর নাম *</span></label>
-                        <input type="text" placeholder="রোগীর পুরো নাম" className="input input-bordered" {...register("recipientName", { required: true })} />
-                        {errors.recipientName && <span className="text-red-500 text-sm">রোগীর নাম প্রয়োজন।</span>}
-                    </div>
-                    {/* রোগীর ইমেল */}
-                    <div className="form-control">
-                        <label className="label"><span className="label-text">যোগাযোগের ইমেল *</span></label>
-                        <input type="email" placeholder="যোগাযোগের ইমেল" className="input input-bordered" {...register("recipientEmail", { required: true })} />
-                        {errors.recipientEmail && <span className="text-red-500 text-sm">ইমেল প্রয়োজন।</span>}
-                    </div>
-                    {/* প্রয়োজনীয় ব্লাড গ্রুপ */}
-                    <div className="form-control">
-                        <label className="label"><span className="label-text">প্রয়োজনীয় ব্লাড গ্রুপ *</span></label>
-                        <select className="select select-bordered" {...register("bloodGroup", { required: true })}>
-                            <option value="">ব্লাড গ্রুপ নির্বাচন করুন</option>
-                            {bloodGroups.map(group => <option key={group} value={group}>{group}</option>)}
-                        </select>
-                        {errors.bloodGroup && <span className="text-red-500 text-sm">ব্লাড গ্রুপ প্রয়োজন।</span>}
-                    </div>
-                </div>
+                        <div className="space-y-4">
+                            <div className="form-control">
+                                <label className="label-text font-semibold mb-2 block">রোগীর নাম *</label>
+                                <input type="text" placeholder="পুরো নাম লিখুন" className={`input input-bordered w-full focus:ring-2 focus:ring-red-500 ${errors.recipientName ? 'border-red-500' : ''}`} {...register("recipientName", { required: true })} />
+                                {errors.recipientName && <span className="text-red-500 text-xs mt-1 italic">নাম আবশ্যক</span>}
+                            </div>
+                            
+                            <div className="form-control">
+                                <label className="label-text font-semibold mb-2 block">যোগাযোগের ইমেল *</label>
+                                <input type="email" placeholder="ইমেল ঠিকানা" className={`input input-bordered w-full ${errors.recipientEmail ? 'border-red-500' : ''}`} {...register("recipientEmail", { required: true })} />
+                                {errors.recipientEmail && <span className="text-red-500 text-xs mt-1 italic">ইমেল আবশ্যক</span>}
+                            </div>
 
-                {/* অবস্থান */}
-                <h2 className="text-xl font-semibold mt-6 border-b pb-2 text-gray-700">অবস্থান</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* জেলা */}
-                    <div className="form-control">
-                        <label className="label"><span className="label-text">জেলা *</span></label>
-                        <select className="select select-bordered" {...register("recipientDistrict", { required: true })}>
-                            <option value="">জেলা নির্বাচন করুন</option>
-                            {/* অবজেক্ট ম্যাপ: value/label হিসেবে name ব্যবহার */}
-                            {districts.map(d => <option key={d.id} value={d.name}>{d.name}</option>)}
-                        </select>
-                        {errors.recipientDistrict && <span className="text-red-500 text-sm">জেলা প্রয়োজন।</span>}
-                    </div>
-                    {/* উপজেলা */}
-                    <div className="form-control">
-                        <label className="label"><span className="label-text">উপজেলা *</span></label>
-                        <select
-                            className="select select-bordered"
-                            disabled={!watchedDistrictName} 
-                            {...register("recipientUpazila", { required: true })}
-                        >
-                            <option value="">উপজেলা নির্বাচন করুন</option>
-                            {/* অবজেক্ট ম্যাপ: value/label হিসেবে name ব্যবহার */}
-                            {upazilas.map(u => <option key={u.id} value={u.name}>{u.name}</option>)}
-                        </select>
-                        {errors.recipientUpazila && <span className="text-red-500 text-sm">উপজেলা প্রয়োজন।</span>}
-                    </div>
-                </div>
+                            <div className="form-control">
+                                <label className="label-text font-semibold mb-2 block">ব্লাড গ্রুপ *</label>
+                                <select className={`select select-bordered w-full ${errors.bloodGroup ? 'border-red-500' : ''}`} {...register("bloodGroup", { required: true })}>
+                                    <option value="">নির্বাচন করুন</option>
+                                    {bloodGroups.map(group => <option key={group} value={group}>{group}</option>)}
+                                </select>
+                                {errors.bloodGroup && <span className="text-red-500 text-xs mt-1 italic">ব্লাড গ্রুপ আবশ্যক</span>}
+                            </div>
+                        </div>
+                    </div>
 
-                {/* হাসপাতাল ও ঠিকানা */}
-                <h2 className="text-xl font-semibold mt-6 border-b pb-2 text-gray-700">স্থান ও তারিখ</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="form-control">
-                        <label className="label"><span className="label-text">হাসপাতালের নাম *</span></label>
-                        <input type="text" placeholder="হাসপাতাল বা ক্লিনিকের নাম" className="input input-bordered" {...register("hospitalName", { required: true })} />
-                        {errors.hospitalName && <span className="text-red-500 text-sm">হাসপাতালের নাম প্রয়োজন।</span>}
-                    </div>
-                    <div className="form-control">
-                        <label className="label"><span className="label-text">হাসপাতালের সম্পূর্ণ ঠিকানা *</span></label>
-                        <input type="text" placeholder="বিস্তারিত ঠিকানা" className="input input-bordered" {...register("address", { required: true })} />
-                        {errors.address && <span className="text-red-500 text-sm">ঠিকানা প্রয়োজন।</span>}
-                    </div>
-                </div>
+                    {/* ঠিকানা ও হাসপাতাল */}
+                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 space-y-5">
+                        <div className="flex items-center gap-2 mb-2">
+                            <div className="p-2 bg-blue-100 rounded-lg text-blue-600"><MapPin size={20}/></div>
+                            <h2 className="text-xl font-bold text-gray-800">ঠিকানা ও অবস্থান</h2>
+                        </div>
 
-                {/* তারিখ ও সময় */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="form-control">
-                        <label className="label"><span className="label-text">রক্তদানের তারিখ *</span></label>
-                        <input type="date" className="input input-bordered"
-                            min={currentDate} 
-                            {...register("donationDate", { required: true })} />
-                        {errors.donationDate && <span className="text-red-500 text-sm">তারিখ প্রয়োজন।</span>}
-                    </div>
-                    <div className="form-control">
-                        <label className="label"><span className="label-text">রক্তদানের সময় *</span></label>
-                        <input type="time" className="input input-bordered" {...register("donationTime", { required: true })} />
-                        {errors.donationTime && <span className="text-red-500 text-sm">সময় প্রয়োজন।</span>}
-                    </div>
-                </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="form-control">
+                                <label className="label-text font-semibold mb-2 block">জেলা *</label>
+                                <select className="select select-bordered w-full" {...register("recipientDistrict", { required: true })}>
+                                    <option value="">জেলা</option>
+                                    {districts.map(d => <option key={d.id} value={d.name}>{d.name}</option>)}
+                                </select>
+                            </div>
+                            <div className="form-control">
+                                <label className="label-text font-semibold mb-2 block">উপজেলা *</label>
+                                <select className="select select-bordered w-full" disabled={!watchedDistrictName} {...register("recipientUpazila", { required: true })}>
+                                    <option value="">উপজেলা</option>
+                                    {upazilas.map(u => <option key={u.id} value={u.name}>{u.name}</option>)}
+                                </select>
+                            </div>
+                        </div>
 
-                {/* মেসেজ */}
-                <div className="form-control">
-                    <label className="label"><span className="label-text">জরুরী বার্তা (ঐচ্ছিক)</span></label>
-                    <textarea className="textarea textarea-bordered h-24" placeholder="বিশেষ কোনো বার্তা বা নির্দেশনা" {...register("requestMessage")}></textarea>
-                </div>
+                        <div className="form-control">
+                            <label className="label-text font-semibold mb-2 block leading-none flex items-center gap-1"><Hospital size={16}/> হাসপাতালের নাম *</label>
+                            <input type="text" placeholder="হাসপাতালের নাম" className="input input-bordered w-full" {...register("hospitalName", { required: true })} />
+                        </div>
 
-                {/* সাবমিট বাটন */}
-                <div className="form-control mt-8">
-                    <button type="submit" className="btn bg-red-600 text-white text-lg hover:bg-red-700">অনুরোধ জমা দিন</button>
-                </div>
-            </form>
-        </div>
-    );
+                        <div className="form-control">
+                            <label className="label-text font-semibold mb-2 block">হাসপাতালের পূর্ণ ঠিকানা *</label>
+                            <input type="text" placeholder="রোড, বাড়ি বা এরিয়া নং" className="input input-bordered w-full" {...register("address", { required: true })} />
+                        </div>
+                    </div>
+                </div>
+
+                {/* কার্ড ৩: তারিখ ও সময় এবং বার্তা */}
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                        <div className="space-y-4">
+                            <div className="flex items-center gap-2 mb-2">
+                                <div className="p-2 bg-orange-100 rounded-lg text-orange-600"><Calendar size={20}/></div>
+                                <h2 className="text-xl font-bold text-gray-800">সময়সূচী</h2>
+                            </div>
+                            <div className="form-control">
+                                <label className="label-text font-semibold mb-2 block">তারিখ *</label>
+                                <input type="date" min={currentDate} className="input input-bordered w-full" {...register("donationDate", { required: true })} />
+                            </div>
+                            <div className="form-control">
+                                <label className="label-text font-semibold mb-2 block">সময় *</label>
+                                <input type="time" className="input input-bordered w-full" {...register("donationTime", { required: true })} />
+                            </div>
+                        </div>
+
+                        <div className="md:col-span-2 space-y-4">
+                            <div className="flex items-center gap-2 mb-2">
+                                <div className="p-2 bg-purple-100 rounded-lg text-purple-600"><MessageSquare size={20}/></div>
+                                <h2 className="text-xl font-bold text-gray-800">জরুরী বার্তা (ঐচ্ছিক)</h2>
+                            </div>
+                            <textarea className="textarea textarea-bordered w-full h-[125px] focus:ring-2 focus:ring-purple-200" placeholder="রোগীর শারীরিক অবস্থা বা রক্তের জরুরি প্রয়োজনে কোনো নির্দেশনা থাকলে লিখুন..." {...register("requestMessage")}></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                {/* সাবমিট বাটন */}
+                <div className="flex justify-center pt-4">
+                    <button type="submit" className="group btn bg-red-600 border-none text-white px-12 h-14 rounded-2xl shadow-lg shadow-red-200 hover:bg-red-700 hover:scale-105 transition-all duration-300">
+                        <Send size={20} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+                        অনুরোধ জমা দিন
+                    </button>
+                </div>
+            </form>
+        </div>
+    );
 };
 
 export default CreateDonationRequest;
