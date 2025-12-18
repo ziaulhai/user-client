@@ -1,88 +1,72 @@
 import React, { useEffect, useState } from 'react'; 
 import { NavLink } from 'react-router-dom';
 import useAuth from '../../hooks/useAuth'; 
-import { LogOut, LayoutDashboard, User, Droplet, Search, Menu, ChevronDown, Phone, Globe, Shield } from 'lucide-react';
+import { LogOut, LayoutDashboard, User, Droplet, Menu, ChevronDown, Phone, Globe, Shield, X, HelpCircle, Mail, MapPin } from 'lucide-react';
 
 const Navbar = () => {
-    // Auth Hook ব্যবহার করা হয়েছে
+    // Auth Hook
     const { user, logOut } = useAuth();
     
-    // 🔥 ভাষা পরিবর্তনের স্টেট যুক্ত করা হয়েছে (Default: বাংলা)
+    // States
     const [currentLang, setCurrentLang] = useState('বাংলা'); 
-    
     const [renderKey, setRenderKey] = useState(Date.now());
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
+    // Profile Photo Cache Breaker
     useEffect(() => {
         if (user && user.photoURL) {
             setRenderKey(Date.now());
         }
     }, [user?.photoURL]);
 
-
     const getAvatarSrc = () => {
         if (user?.photoURL) {
-            // ক্যাশ সমস্যা এড়াতে টাইমস্ট্যাম্প ব্যবহার
             return `${user.photoURL}?t=${renderKey}`; 
         }
         return 'https://i.ibb.co/6P2L1J5/default-avatar.png';
     };
 
-    // 🔥 ভাষা পরিবর্তন হ্যান্ডলার ফাংশন
+    // Language Handler
     const handleLanguageChange = (language) => {
         setCurrentLang(language);
-        console.log(`ভাষা পরিবর্তন করা হয়েছে: ${language}`);
-        // 🚨 ভবিষ্যতে: পুরো অ্যাপ্লিকেশনের কনটেন্ট পরিবর্তন করতে এখানে i18n লজিক যুক্ত করতে হবে।
+        setIsMobileMenuOpen(false);
     };
 
+    // Close Mobile Menu
+    const closeMenu = () => setIsMobileMenuOpen(false);
 
     // **********************************************
-    // ১. টপ হেডার বার কম্পোনেন্ট (Header Top Bar)
-    // 🔥 এই অংশটি এখন Navbar ফাংশনের ভেতরে ডিফাইন করা হয়েছে 🔥
+    // ১. টপ হেডার বার
     // **********************************************
     const TopHeaderBar = (
         <div className="bg-gray-100 border-b border-gray-200"> 
-            <div className="container mx-auto px-4 py-1 flex justify-between items-center text-sm text-gray-600"> 
-                
-                {/* বাম দিক */}
-                <div className="flex items-center space-x-4">
+            <div className="container mx-auto px-4 py-1.5 flex justify-between items-center text-sm text-gray-600 font-medium"> 
+                <div className="flex items-center space-x-6">
+                    <p className="hidden md:flex items-center"><MapPin size={14} className="mr-1 text-red-500"/> বাংলাদেশ</p>
                     <p className="hidden sm:block">আপনার রক্তদান আমাদের শক্তি।</p>
                 </div>
 
-                {/* ডান দিক */}
-                <div className="flex items-center space-x-4">
-                    <a href="tel:+(880)123456789" className="flex items-center hover:text-red-600">
+                <div className="flex items-center space-x-5">
+                    <a href="tel:+(880)123456789" className="flex items-center hover:text-red-600 transition-colors">
                         <Phone size={14} className="mr-1" /> +৮৮০ ১২৩৪ ৫৬৭ ৮৯
                     </a>
-                    <NavLink to="/contact-us" className="hover:text-red-600 hidden sm:block">যোগাযোগ</NavLink>
                     
-                    {/* ভাষা ড্রপডাউন (হোভার-ভিত্তিক) */}
+                    {/* Language Dropdown */}
                     <div className="relative group">
-                        {/* 🔥 বর্তমান ভাষা প্রদর্শন */}
                         <div className="flex items-center cursor-pointer hover:text-red-600 px-1 py-0.5">
-                            <Globe size={14} className="mr-1" /> {currentLang} <ChevronDown size={14} className="ml-1" />
+                            <Globe size={14} className="mr-1" /> {currentLang} <ChevronDown size={14} className="ml-0.5" />
                         </div>
-                        
-                        {/* হোভার স্টেবিলিটির জন্য mt-0 ব্যবহার করা হয়েছে */}
                         <ul className="absolute right-0 top-full hidden group-hover:block 
-                                menu menu-sm bg-base-100 rounded-box z-[1] mt-0 w-32 p-2 shadow-lg border border-gray-200"> 
-                            
-                            {/* 🔥 ক্লিক হ্যান্ডলার এবং সক্রিয় ক্লাস যুক্ত করা হয়েছে */}
+                            menu menu-sm bg-base-100 rounded-box z-[50] mt-0 w-32 p-2 shadow-2xl border border-gray-200"> 
                             <li>
-                                <a 
-                                    onClick={() => handleLanguageChange('English')}
-                                    className={currentLang === 'English' ? 'font-bold bg-red-50 text-red-600' : ''}
-                                >
+                                <button onClick={() => handleLanguageChange('English')} className={`w-full text-left px-3 py-2 rounded-md ${currentLang === 'English' ? 'font-bold bg-red-50 text-red-600' : 'hover:bg-gray-50'}`}>
                                     English
-                                </a>
+                                </button>
                             </li>
                             <li>
-                                <a 
-                                    onClick={() => handleLanguageChange('বাংলা')}
-                                    className={currentLang === 'বাংলা' ? 'font-bold bg-red-50 text-red-600' : ''}
-                                >
+                                <button onClick={() => handleLanguageChange('বাংলা')} className={`w-full text-left px-3 py-2 rounded-md ${currentLang === 'বাংলা' ? 'font-bold bg-red-50 text-red-600' : 'hover:bg-gray-50'}`}>
                                     বাংলা
-                                </a>
+                                </button>
                             </li>
                         </ul>
                     </div>
@@ -92,207 +76,165 @@ const Navbar = () => {
     );
 
     // **********************************************
-    // ২. প্রধান ন্যাভিগেশন মেনু (Main Navbar)
+    // ২. নেভিগেশন লিংকস (Shared)
     // **********************************************
-
-    // লোগো এরিয়া
-    const LogoArea = (
-        <NavLink to="/" className="flex items-center space-x-2">
-            <div className="text-red-600">
-                <Droplet size={36} />
-            </div>
-            <span className='text-2xl font-extrabold text-red-600 hidden sm:block whitespace-nowrap'>
-                রক্তদান অ্যাপ
-            </span>
-        </NavLink>
-    );
-
-    // সকল ন্যাভিগেশন লিংক
-    const navLinks = (
-        <>
-            <li className='font-semibold text-gray-700'>
-                <NavLink 
-                    to="/" 
-                    className={({ isActive }) => 
-                        `hover:text-red-600 border-b-2 pb-1.5 whitespace-nowrap ${isActive ? 'text-red-600 border-red-600' : 'border-transparent'}`
-                    }
-                >
-                    হোম
-                </NavLink>
-            </li>
-            
-            {/* হোভার ড্রপডাউন: আমাদের সম্পর্কে */}
-            <li className='font-semibold text-gray-700 relative group'>
-                <div className="flex items-center cursor-pointer hover:text-red-600 border-b-2 border-transparent hover:border-red-600 pb-1.5 whitespace-nowrap">
-                    আমাদের সম্পর্কে <ChevronDown size={14} className="ml-1" />
-                </div>
-                {/* হোভারে শো করবে */}
-                <ul className="absolute left-0 top-full hidden group-hover:block 
-                        p-2 bg-base-100 shadow-xl rounded-box z-[1] mt-0.5 w-52 border-t-2 border-red-600">
-                    <li><NavLink to="/who-we-are">আমরা কারা</NavLink></li>
-                    <li><NavLink to="/mission">আমাদের লক্ষ্য</NavLink></li>
-                </ul>
-            </li>
-
-            {/* হোভার ড্রপডাউন: যা করি */}
-            <li className='font-semibold text-gray-700 relative group'>
-                <div className="flex items-center cursor-pointer hover:text-red-600 border-b-2 border-transparent hover:border-red-600 pb-1.5 whitespace-nowrap">
-                    যা করি <ChevronDown size={14} className="ml-1" />
-                </div>
-                {/* হোভারে শো করবে */}
-                <ul className="absolute left-0 top-full hidden group-hover:block 
-                        p-2 bg-base-100 shadow-xl rounded-box z-[1] mt-0.5 w-52 border-t-2 border-red-600">
-                    <li><NavLink to="/donation-requests">অনুরোধ সমূহ</NavLink></li>
-                    <li><NavLink to="/search">ডোনার খুঁজুন</NavLink></li>
-                </ul>
-            </li>
-
-            {/* ফান্ডিং পেজ লিঙ্ক: ক্যোয়ারী প্যারামিটার যুক্ত করা হয়েছে */}
-            <li className='font-semibold text-gray-700'>
-                <NavLink 
-                    to="/funding?donate=true"
-                    className={({ isActive }) => 
-                        `hover:text-red-600 border-b-2 pb-1.5 whitespace-nowrap flex items-center ${isActive ? 'text-red-600 border-red-600' : 'border-transparent'}`
-                    }
-                >
-                    <Shield size={16} className='inline mr-1' /> ফান্ডিং
-                </NavLink>
-            </li>
-
-            <li className='font-semibold text-gray-700'>
-                <NavLink 
-                    to="/blogs" 
-                    className={({ isActive }) => 
-                        `hover:text-red-600 border-b-2 pb-1.5 whitespace-nowrap ${isActive ? 'text-red-600 border-red-600' : 'border-transparent'}`
-                    }
-                >
-                    ব্লগ
-                </NavLink>
-            </li>
-            <li className='font-semibold text-gray-700'>
-                <NavLink 
-                    to="/contact-us" 
-                    className={({ isActive }) => 
-                        `hover:text-red-600 border-b-2 pb-1.5 whitespace-nowrap ${isActive ? 'text-red-600 border-red-600' : 'border-transparent'}`
-                    }
-                >
-                    যোগাযোগ
-                </NavLink>
-            </li>
-        </>
-    );
-
-    // ডান দিকের বাটন ও প্রোফাইল (ছোট ও বড় স্ক্রিনের জন্য রেসপন্সিভ)
-    const RightActions = (
-        <div className="flex items-center space-x-3"> 
-            
-            {/* ডোনেট বাটন: /donate রুটে যাচ্ছে */}
-            <NavLink to="/donate" className="btn bg-red-700 text-white hover:bg-red-800 whitespace-nowrap hidden lg:inline-flex">
-                ডোনেট করুন
-            </NavLink>
-            {/* ছোট স্ক্রিনের জন্য আইকন বাটন */}
-            <NavLink to="/donate" className="btn btn-square bg-red-700 hover:bg-red-800 text-white lg:hidden">
-                <Droplet size={20} />
-            </NavLink>
-            
-            {/* ইউজার প্রোফাইল মেনু / অথেন্টিকেশন বাটন */}
-            {user ? (
-                // হোভার-ভিত্তিক প্রোফাইল ড্রপডাউন
-                <div className="relative group"> 
-                    <div className="btn btn-ghost btn-circle avatar border-2 border-red-600 cursor-pointer" role="button">
-                        <div 
-                            className="w-10 rounded-full overflow-hidden" 
-                            key={renderKey} // <<<<<<<<<<<<< ফোর্সিং
-                        >
-                            {user?.photoURL ? (
-                                <img 
-                                    src={getAvatarSrc()} // ক্যাশ বাস্টার URL ব্যবহার
-                                    alt="User Avatar" 
-                                    onError={(e) => { 
-                                        e.target.onerror = null; 
-                                        e.target.src = "https://i.ibb.co/6P2L1J5/default-avatar.png"; 
-                                    }} 
-                                />
-                            ) : (
-                                <div className="bg-red-200 flex items-center justify-center h-full text-red-600"><User size={20} /></div>
-                            )}
-                        </div>
-                    </div>
-                    {/* হোভারে শো করবে */}
-                    <ul className="absolute right-0 top-full hidden group-hover:block 
-                            menu menu-sm bg-base-100 rounded-box z-[1] mt-0.5 w-52 p-2 shadow-lg border border-gray-200">
-                        <li className='menu-title text-gray-700 font-semibold'>{user?.displayName || 'ব্যবহারকারী'}</li>
-                        <div className="divider my-0"></div>
-                        <li><NavLink to="/dashboard"><LayoutDashboard size={18} className='mr-2' /> ড্যাশবোর্ড</NavLink></li>
-                        <li><a onClick={logOut} className='text-red-600 hover:bg-red-50'><LogOut size={18} className='mr-2' /> লগ আউট</a></li>
-                    </ul>
-                </div>
-            ) : (
-                // লগইন বাটন
-                <NavLink to="/login" className="btn bg-red-600 text-white hover:bg-red-700 whitespace-nowrap">
-                    <span className='hidden lg:inline'>লগইন</span>
-                    <span className='lg:hidden'><User size={20} /></span>
-                </NavLink>
-            )}
-        </div>
-    );
+    const navItems = [
+        { name: 'হোম', path: '/' },
+        { 
+            name: 'আমাদের সম্পর্কে', 
+            submenu: [
+                { name: 'আমরা কারা', path: '/who-we-are' },
+                { name: 'আমাদের লক্ষ্য', path: '/mission' }
+            ] 
+        },
+        { 
+            name: 'যা করি', 
+            submenu: [
+                { name: 'অনুরোধ সমূহ', path: '/donation-requests' },
+                { name: 'ডোনার খুঁজুন', path: '/search' }
+            ] 
+        },
+        { name: 'ফান্ডিং', path: '/funding?donate=true', icon: <Shield size={16} /> },
+        { name: 'ব্লগ', path: '/blogs' },
+        { name: 'যোগাযোগ', path: '/contact-us' }
+    ];
 
     return (
-        <header className="bg-white sticky top-0 z-20 shadow-sm border-b">
-            
-            {/* টপ হেডার বার (এখন স্টেট আপডেটে রি-রেন্ডার হবে) */}
+        <header className="bg-white sticky top-0 z-[100] shadow-md border-b">
             {TopHeaderBar}
 
-            {/* প্রধান ন্যাভিগেশন বার */}
-            <div className="navbar container mx-auto px-4 py-2"> 
-                
-                {/* ১. বাম অংশ: লোগো (navbar-start) */}
+            <nav className="navbar container mx-auto px-4 py-2"> 
+                {/* Navbar Start: Logo */}
                 <div className="navbar-start"> 
-                    {LogoArea}
+                    <NavLink to="/" className="flex items-center space-x-2 group">
+                        <div className="text-red-600 transition-transform group-hover:scale-110 duration-300">
+                            <Droplet size={40} fill="currentColor" />
+                        </div>
+                        <div className="flex flex-col">
+                            <span className='text-2xl font-black text-red-600 leading-none'>রক্তদান</span>
+                            <span className='text-[10px] tracking-[0.2em] font-bold text-gray-500 uppercase'>সেবাই আমাদের ধর্ম</span>
+                        </div>
+                    </NavLink>
                 </div>
 
-                {/* ২. মাঝের অংশ: ডেস্কটপ ন্যাভিগেশন (navbar-center) */}
-                <div className="navbar-center hidden lg:flex flex-grow justify-center"> 
-                    <ul className="menu menu-horizontal px-1 space-x-4"> 
-                        {navLinks}
+                {/* Navbar Center: Desktop Menu */}
+                <div className="navbar-center hidden lg:flex"> 
+                    <ul className="menu menu-horizontal p-0 space-x-2"> 
+                        {navItems.map((item, idx) => (
+                            <li key={idx} className={item.submenu ? 'relative group' : ''}>
+                                {item.submenu ? (
+                                    <>
+                                        <div className="flex items-center font-bold text-gray-700 hover:text-red-600 py-2 px-4 cursor-pointer">
+                                            {item.name} <ChevronDown size={14} className="ml-1" />
+                                        </div>
+                                        <ul className="absolute left-0 top-full hidden group-hover:block w-52 p-2 bg-white shadow-2xl rounded-xl border-t-4 border-red-600 z-[110]">
+                                            {item.submenu.map((sub, sIdx) => (
+                                                <li key={sIdx}>
+                                                    <NavLink to={sub.path} className="py-2 hover:bg-red-50 hover:text-red-600 rounded-lg">{sub.name}</NavLink>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </>
+                                ) : (
+                                    <NavLink 
+                                        to={item.path} 
+                                        className={({ isActive }) => 
+                                            `font-bold py-2 px-4 transition-all ${isActive ? 'text-red-600 bg-red-50 rounded-lg' : 'text-gray-700 hover:text-red-600'}`
+                                        }
+                                    >
+                                        {item.icon && <span className="mr-1">{item.icon}</span>}
+                                        {item.name}
+                                    </NavLink>
+                                )}
+                            </li>
+                        ))}
                     </ul>
                 </div>
                 
-                {/* ৩. ডান দিক: অ্যাকশন এবং হ্যামবার্গার (navbar-end) */}
-                <div className="navbar-end w-fit"> 
-                    
-                    {/* বাটন/প্রোফাইল (সব স্ক্রিনে দৃশ্যমান) */}
-                    {RightActions}
+                {/* Navbar End: User Actions */}
+                <div className="navbar-end space-x-3"> 
+                    <NavLink to="/donate" className="btn bg-red-600 border-none text-white hover:bg-red-700 hidden md:flex shadow-lg shadow-red-200">
+                        ডোনেট করুন
+                    </NavLink>
 
-                    {/* হ্যামবার্গার মেনু (শুধু ছোট স্ক্রিনে) */}
-                    <div className="dropdown dropdown-end ml-2" onBlur={() => setIsMobileMenuOpen(false)}>
-                        <div tabIndex={0} role="button" className="btn btn-ghost lg:hidden" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
-                            <Menu size={24} />
-                        </div>
-                        {/* মোবাইল মেনু কন্টেন্ট */}
-                        {isMobileMenuOpen && (
-                            <ul tabIndex={0} className="menu menu-sm dropdown-content bg-base-100 rounded-box z-[1] mt-3 w-52 p-2 shadow-lg border">
-                                
-                                {/* নেভিগেশন লিংক */}
-                                {navLinks} 
+                    {user ? (
+                        <div className="dropdown dropdown-end"> 
+                            <label tabIndex={0} className="btn btn-ghost btn-circle avatar border-2 border-red-600 p-0.5">
+                                <div className="w-full rounded-full overflow-hidden">
+                                    <img src={getAvatarSrc()} alt="Profile" />
+                                </div>
+                            </label>
+                            <ul tabIndex={0} className="menu menu-sm dropdown-content mt-3 z-[120] p-2 shadow-2xl bg-base-100 rounded-box w-56 border border-gray-100">
+                                <div className="px-4 py-3 bg-gray-50 rounded-t-lg mb-2">
+                                    <p className="text-xs text-gray-500">লগইন করা আছে</p>
+                                    <p className="font-bold text-gray-800 truncate">{user?.displayName || 'ইউজার'}</p>
+                                </div>
+                                <li><NavLink to="/dashboard" className="py-2"><LayoutDashboard size={18} /> ড্যাশবোর্ড</NavLink></li>
+                                <li><NavLink to="/profile" className="py-2"><User size={18} /> প্রোফাইল</NavLink></li>
                                 <div className="divider my-1"></div>
-
-                                {/* রেজিস্টার বাটন (মোবাইল) */}
-                                {!user && (
-                                    <li>
-                                        <NavLink to="/register" className="btn bg-red-600 text-white hover:bg-red-700 w-full justify-start">রেজিস্টার</NavLink>
-                                    </li>
-                                )}
-                                
-                                {/* লগইনড থাকলে ড্যাশবোর্ড/লগআউট বাটন (মোবাইল) */}
-                                {user && (
-                                    <>
-                                        <li><NavLink to="/dashboard"><LayoutDashboard size={18} className='mr-2' /> ড্যাশবোর্ড</NavLink></li>
-                                        <li><a onClick={logOut} className='text-red-600 hover:bg-red-50 w-full justify-start'><LogOut size={18} className='mr-2' /> লগ আউট</a></li>
-                                    </>
-                                )}
+                                <li><button onClick={logOut} className="py-2 text-red-600 hover:bg-red-50 font-bold"><LogOut size={18} /> লগ আউট</button></li>
                             </ul>
-                        )}
+                        </div>
+                    ) : (
+                        <NavLink to="/login" className="btn btn-outline border-red-600 text-red-600 hover:bg-red-600 hover:border-red-600 px-6">
+                            লগইন
+                        </NavLink>
+                    )}
+
+                    {/* Hamburger Button */}
+                    <button 
+                        className="btn btn-ghost lg:hidden p-1 text-gray-700" 
+                        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                    >
+                        {isMobileMenuOpen ? <X size={30} className="text-red-600" /> : <Menu size={30} />}
+                    </button>
+                </div>
+            </nav>
+
+            {/* --- Mobile Sidebar / Overlay Menu --- */}
+            <div className={`fixed inset-0 z-[150] lg:hidden transition-all duration-300 ${isMobileMenuOpen ? 'visible' : 'invisible'}`}>
+                {/* Background Overlay */}
+                <div className={`absolute inset-0 bg-black/50 transition-opacity duration-300 ${isMobileMenuOpen ? 'opacity-100' : 'opacity-0'}`} onClick={closeMenu}></div>
+                
+                {/* Menu Drawer */}
+                <div className={`absolute right-0 top-0 h-full w-72 bg-white shadow-2xl transition-transform duration-300 transform ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+                    <div className="flex flex-col h-full">
+                        <div className="p-5 border-b flex justify-between items-center bg-red-600 text-white">
+                            <span className="font-bold text-xl flex items-center"><Droplet size={24} className="mr-1"/> মেনু</span>
+                            <button onClick={closeMenu} className="p-1 hover:bg-white/20 rounded-full"><X size={24}/></button>
+                        </div>
+                        
+                        <div className="flex-1 overflow-y-auto py-4">
+                            <ul className="menu menu-vertical px-2 space-y-1">
+                                {navItems.map((item, idx) => (
+                                    <li key={idx}>
+                                        {item.submenu ? (
+                                            <details>
+                                                <summary className="font-bold text-gray-700 py-3">{item.name}</summary>
+                                                <ul className="pl-4 mt-1 border-l-2 border-red-100 ml-2">
+                                                    {item.submenu.map((sub, sIdx) => (
+                                                        <li key={sIdx}><NavLink onClick={closeMenu} to={sub.path} className="py-3">{sub.name}</NavLink></li>
+                                                    ))}
+                                                </ul>
+                                            </details>
+                                        ) : (
+                                            <NavLink onClick={closeMenu} to={item.path} className="font-bold text-gray-700 py-3">{item.name}</NavLink>
+                                        )}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+
+                        <div className="p-4 border-t space-y-3">
+                            {!user ? (
+                                <>
+                                    <NavLink onClick={closeMenu} to="/register" className="btn btn-block bg-red-600 text-white border-none">রেজিস্ট্রেশন</NavLink>
+                                    <NavLink onClick={closeMenu} to="/login" className="btn btn-block btn-outline border-red-600 text-red-600">লগইন</NavLink>
+                                </>
+                            ) : (
+                                <button onClick={() => {logOut(); closeMenu();}} className="btn btn-block btn-outline btn-error font-bold"><LogOut size={18}/> লগ আউট</button>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>
