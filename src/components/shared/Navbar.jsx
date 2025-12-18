@@ -1,18 +1,41 @@
 import React, { useEffect, useState } from 'react'; 
 import { NavLink } from 'react-router-dom';
 import useAuth from '../../hooks/useAuth'; 
-import { LogOut, LayoutDashboard, User, Droplet, Menu, ChevronDown, Phone, Globe, Shield, X, HelpCircle, Mail, MapPin } from 'lucide-react';
+import { LogOut, LayoutDashboard, User, Droplet, Menu, ChevronDown, Phone, LayoutGrid, Shield, X, MapPin } from 'lucide-react';
 
 const Navbar = () => {
-    // Auth Hook
     const { user, logOut } = useAuth();
-    
-    // States
-    const [currentLang, setCurrentLang] = useState('বাংলা'); 
     const [renderKey, setRenderKey] = useState(Date.now());
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-    // Profile Photo Cache Breaker
+    // --- ১. টেক্সট ডেটা (বাংলা ডিফল্ট রাখা হয়েছে) ---
+    const content = {
+        country: 'বাংলাদেশ',
+        slogan: 'আপনার রক্তদান আমাদের শক্তি।',
+        tagline: 'সেবাই আমাদের ধর্ম',
+        logoName: 'রক্তদান',
+        btnRequest: 'রক্ত দানের অনুরোধ',
+        btnLogin: 'লগইন',
+        btnLogout: 'লগ আউট',
+        dashboard: 'ড্যাশবোর্ড',
+        profile: 'প্রোফাইল',
+        loggedInAs: 'লগইন করা আছে',
+        menu: 'মেনু',
+        reg: 'রেজিস্ট্রেশন',
+        nav: {
+            home: 'হোম',
+            about: 'আমাদের সম্পর্কে',
+            who: 'আমরা কারা',
+            mission: 'আমাদের লক্ষ্য',
+            what: 'যা করি',
+            requests: 'অনুরোধ সমূহ',
+            search: 'ডোনার খুঁজুন',
+            funding: 'ফান্ডিং',
+            blog: 'ব্লগ',
+            contact: 'যোগাযোগ'
+        }
+    };
+
     useEffect(() => {
         if (user && user.photoURL) {
             setRenderKey(Date.now());
@@ -26,77 +49,46 @@ const Navbar = () => {
         return 'https://i.ibb.co.com/WNyfY5cS/profile-1.png';
     };
 
-    // Language Handler
-    const handleLanguageChange = (language) => {
-        setCurrentLang(language);
-        setIsMobileMenuOpen(false);
-    };
-
-    // Close Mobile Menu
     const closeMenu = () => setIsMobileMenuOpen(false);
 
-    // **********************************************
-    // ১. টপ হেডার বার
-    // **********************************************
+    // ১. টপ হেডার বার (ভাষা পরিবর্তনের ড্রপডাউন রিমুভ করা হয়েছে)
     const TopHeaderBar = (
         <div className="bg-gray-100 border-b border-gray-200"> 
             <div className="container mx-auto px-4 py-1.5 flex justify-between items-center text-sm text-gray-600 font-medium"> 
                 <div className="flex items-center space-x-6">
-                    <p className="hidden md:flex items-center"><MapPin size={14} className="mr-1 text-red-500"/> বাংলাদেশ</p>
-                    <p className="hidden sm:block">আপনার রক্তদান আমাদের শক্তি।</p>
+                    <p className="hidden md:flex items-center"><MapPin size={14} className="mr-1 text-red-500"/> {content.country}</p>
+                    <p className="hidden sm:block">{content.slogan}</p>
                 </div>
 
                 <div className="flex items-center space-x-5">
                     <a href="tel:+(880)123456789" className="flex items-center hover:text-red-600 transition-colors">
                         <Phone size={14} className="mr-1" /> +৮৮০ ১২৩৪ ৫৬৭ ৮৯
                     </a>
-                    
-                    {/* Language Dropdown */}
-                    <div className="relative group">
-                        <div className="flex items-center cursor-pointer hover:text-red-600 px-1 py-0.5">
-                            <Globe size={14} className="mr-1" /> {currentLang} <ChevronDown size={14} className="ml-0.5" />
-                        </div>
-                        <ul className="absolute right-0 top-full hidden group-hover:block 
-                            menu menu-sm bg-base-100 rounded-box z-[50] mt-0 w-32 p-2 shadow-2xl border border-gray-200"> 
-                            <li>
-                                <button onClick={() => handleLanguageChange('English')} className={`w-full text-left px-3 py-2 rounded-md ${currentLang === 'English' ? 'font-bold bg-red-50 text-red-600' : 'hover:bg-gray-50'}`}>
-                                    English
-                                </button>
-                            </li>
-                            <li>
-                                <button onClick={() => handleLanguageChange('বাংলা')} className={`w-full text-left px-3 py-2 rounded-md ${currentLang === 'বাংলা' ? 'font-bold bg-red-50 text-red-600' : 'hover:bg-gray-50'}`}>
-                                    বাংলা
-                                </button>
-                            </li>
-                        </ul>
-                    </div>
                 </div>
             </div>
         </div>
     );
 
-    // **********************************************
-    // ২. নেভিগেশন লিংকস (Shared)
-    // **********************************************
+    // ২. নেভিগেশন লিংকস
     const navItems = [
-        { name: 'হোম', path: '/' },
+        { name: content.nav.home, path: '/' },
         { 
-            name: 'আমাদের সম্পর্কে', 
+            name: content.nav.about, 
             submenu: [
-                { name: 'আমরা কারা', path: '/who-we-are' },
-                { name: 'আমাদের লক্ষ্য', path: '/mission' }
+                { name: content.nav.who, path: '/who-we-are' },
+                { name: content.nav.mission, path: '/mission' }
             ] 
         },
         { 
-            name: 'যা করি', 
+            name: content.nav.what, 
             submenu: [
-                { name: 'অনুরোধ সমূহ', path: '/donation-requests' },
-                { name: 'ডোনার খুঁজুন', path: '/search' }
+                { name: content.nav.requests, path: '/donation-requests' },
+                { name: content.nav.search, path: '/search' }
             ] 
         },
-        { name: 'ফান্ডিং', path: '/funding?donate=true', icon: <Shield size={16} /> },
-        { name: 'ব্লগ', path: '/blogs' },
-        { name: 'যোগাযোগ', path: '/contact-us' }
+        { name: content.nav.funding, path: '/funding?donate=true', icon: <Shield size={16} /> },
+        { name: content.nav.blog, path: '/blogs' },
+        { name: content.nav.contact, path: '/contact-us' }
     ];
 
     return (
@@ -104,20 +96,18 @@ const Navbar = () => {
             {TopHeaderBar}
 
             <nav className="navbar container mx-auto px-4 py-2"> 
-                {/* Navbar Start: Logo */}
                 <div className="navbar-start"> 
                     <NavLink to="/" className="flex items-center space-x-2 group">
                         <div className="text-red-600 transition-transform group-hover:scale-110 duration-300">
                             <Droplet size={40} fill="currentColor" />
                         </div>
                         <div className="flex flex-col">
-                            <span className='text-2xl font-black text-red-600 leading-none'>রক্তদান</span>
-                            <span className='text-[10px] tracking-[0.2em] font-bold text-gray-500 uppercase'>সেবাই আমাদের ধর্ম</span>
+                            <span className='text-2xl font-black text-red-600 leading-none'>{content.logoName}</span>
+                            <span className='text-[10px] tracking-[0.2em] font-bold text-gray-500 uppercase'>{content.tagline}</span>
                         </div>
                     </NavLink>
                 </div>
 
-                {/* Navbar Center: Desktop Menu */}
                 <div className="navbar-center hidden lg:flex"> 
                     <ul className="menu menu-horizontal p-0 space-x-2"> 
                         {navItems.map((item, idx) => (
@@ -142,7 +132,7 @@ const Navbar = () => {
                                             `font-bold py-2 px-4 transition-all ${isActive ? 'text-red-600 bg-red-50 rounded-lg' : 'text-gray-700 hover:text-red-600'}`
                                         }
                                     >
-                                        {item.icon && <span className="mr-1">{item.icon}</span>}
+                                        {item.icon && <span className="mr-1 inline-block">{item.icon}</span>}
                                         {item.name}
                                     </NavLink>
                                 )}
@@ -151,10 +141,9 @@ const Navbar = () => {
                     </ul>
                 </div>
                 
-                {/* Navbar End: User Actions */}
                 <div className="navbar-end space-x-3"> 
                     <NavLink to="/donate" className="btn bg-red-600 border-none text-white hover:bg-red-700 hidden md:flex shadow-lg shadow-red-200">
-                        রক্ত দানের অনুরোধ
+                        {content.btnRequest}
                     </NavLink>
 
                     {user ? (
@@ -166,22 +155,21 @@ const Navbar = () => {
                             </label>
                             <ul tabIndex={0} className="menu menu-sm dropdown-content mt-3 z-[120] p-2 shadow-2xl bg-base-100 rounded-box w-56 border border-gray-100">
                                 <div className="px-4 py-3 bg-gray-50 rounded-t-lg mb-2">
-                                    <p className="text-xs text-gray-500">লগইন করা আছে</p>
-                                    <p className="font-bold text-gray-800 truncate">{user?.displayName || 'ইউজার'}</p>
+                                    <p className="text-xs text-gray-500">{content.loggedInAs}</p>
+                                    <p className="font-bold text-gray-800 truncate">{user?.displayName || 'ব্যবহারকারী'}</p>
                                 </div>
-                                <li><NavLink to="/dashboard" className="py-2"><LayoutDashboard size={18} /> ড্যাশবোর্ড</NavLink></li>
-                                <li><NavLink to="/profile" className="py-2"><User size={18} /> প্রোফাইল</NavLink></li>
+                                <li><NavLink to="/dashboard" className="py-2"><LayoutDashboard size={18} /> {content.dashboard}</NavLink></li>
+                                <li><NavLink to="/profile" className="py-2"><User size={18} /> {content.profile}</NavLink></li>
                                 <div className="divider my-1"></div>
-                                <li><button onClick={logOut} className="py-2 text-red-600 hover:bg-red-50 font-bold"><LogOut size={18} /> লগ আউট</button></li>
+                                <li><button onClick={logOut} className="py-2 text-red-600 hover:bg-red-50 font-bold"><LogOut size={18} /> {content.btnLogout}</button></li>
                             </ul>
                         </div>
                     ) : (
                         <NavLink to="/login" className="btn btn-outline border-red-600 text-red-600 hover:bg-red-600 hover:border-red-600 px-6">
-                            লগইন
+                            {content.btnLogin}
                         </NavLink>
                     )}
 
-                    {/* Hamburger Button */}
                     <button 
                         className="btn btn-ghost lg:hidden p-1 text-gray-700" 
                         onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -191,16 +179,13 @@ const Navbar = () => {
                 </div>
             </nav>
 
-            {/* --- Mobile Sidebar / Overlay Menu --- */}
+            {/* Mobile Sidebar */}
             <div className={`fixed inset-0 z-[150] lg:hidden transition-all duration-300 ${isMobileMenuOpen ? 'visible' : 'invisible'}`}>
-                {/* Background Overlay */}
                 <div className={`absolute inset-0 bg-black/50 transition-opacity duration-300 ${isMobileMenuOpen ? 'opacity-100' : 'opacity-0'}`} onClick={closeMenu}></div>
-                
-                {/* Menu Drawer */}
                 <div className={`absolute right-0 top-0 h-full w-72 bg-white shadow-2xl transition-transform duration-300 transform ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'}`}>
                     <div className="flex flex-col h-full">
                         <div className="p-5 border-b flex justify-between items-center bg-red-600 text-white">
-                            <span className="font-bold text-xl flex items-center"><Droplet size={24} className="mr-1"/> মেনু</span>
+                            <span className="font-bold text-xl flex items-center"><Droplet size={24} className="mr-1"/> {content.menu}</span>
                             <button onClick={closeMenu} className="p-1 hover:bg-white/20 rounded-full"><X size={24}/></button>
                         </div>
                         
@@ -228,11 +213,11 @@ const Navbar = () => {
                         <div className="p-4 border-t space-y-3">
                             {!user ? (
                                 <>
-                                    <NavLink onClick={closeMenu} to="/register" className="btn btn-block bg-red-600 text-white border-none">রেজিস্ট্রেশন</NavLink>
-                                    <NavLink onClick={closeMenu} to="/login" className="btn btn-block btn-outline border-red-600 text-red-600">লগইন</NavLink>
+                                    <NavLink onClick={closeMenu} to="/register" className="btn btn-block bg-red-600 text-white border-none">{content.reg}</NavLink>
+                                    <NavLink onClick={closeMenu} to="/login" className="btn btn-block btn-outline border-red-600 text-red-600">{content.btnLogin}</NavLink>
                                 </>
                             ) : (
-                                <button onClick={() => {logOut(); closeMenu();}} className="btn btn-block btn-outline btn-error font-bold"><LogOut size={18}/> লগ আউট</button>
+                                <button onClick={() => {logOut(); closeMenu();}} className="btn btn-block btn-outline btn-error font-bold"><LogOut size={18}/> {content.btnLogout}</button>
                             )}
                         </div>
                     </div>
