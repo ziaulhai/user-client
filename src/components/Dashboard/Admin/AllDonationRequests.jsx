@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import useAxiosSecure from '../../../hooks/useAxiosSecure';
 import Swal from 'sweetalert2';
 import { format } from 'date-fns';
-import { Trash2, CheckCircle, XCircle, List, Loader } from 'lucide-react';
+import { Trash2, CheckCircle, XCircle, List, MapPin, Calendar, Clock, User, Droplet } from 'lucide-react';
 
 const getStatusClass = (status) => {
     switch (status) {
@@ -21,11 +21,10 @@ const AllDonationRequests = () => {
     const [isLoading, setIsLoading] = useState(true);
     const axiosSecure = useAxiosSecure();
 
-    // --- ডেটা লোড করার ফাংশন ---
+    // --- ডেটা লোড করার লজিক (অপরিবর্তিত) ---
     const fetchRequests = useCallback(async () => {
         setIsLoading(true);
         try {
-            // সার্ভারের /api/v1/donation-requests/admin/all-requests রুট থেকে সব অনুরোধ লোড করা
             const res = await axiosSecure.get('/api/v1/donation-requests/admin/all-requests');
             setRequests(res.data);
         } catch (error) {
@@ -40,9 +39,9 @@ const AllDonationRequests = () => {
         fetchRequests();
     }, [fetchRequests]);
 
-    // --- স্ট্যাটাস আপডেট হ্যান্ডেলার (Done/Canceled) ---
+    // --- স্ট্যাটাস আপডেট লজিক (অপরিবর্তিত) ---
     const handleStatusUpdate = (id, currentStatus, newStatus, recipientName) => {
-        if (currentStatus === newStatus) return; // একই স্ট্যাটাস হলে ইগনোর
+        if (currentStatus === newStatus) return;
 
         Swal.fire({
             title: "স্ট্যাটাস পরিবর্তন নিশ্চিত করুন",
@@ -55,10 +54,9 @@ const AllDonationRequests = () => {
         }).then(async (result) => {
             if (result.isConfirmed) {
                 try {
-                    // PATCH রুট ব্যবহার করা হলো (যা আপনার donationRequests.js এ ৬ নং রুট হিসেবে আছে)
                     await axiosSecure.patch(`/api/v1/donation-requests/${id}`, { requestStatus: newStatus });
                     Swal.fire('সফল!', `স্ট্যাটাস সফলভাবে "${newStatus}" এ আপডেট হয়েছে।`, 'success');
-                    fetchRequests(); // তালিকা রিফ্রেশ করা
+                    fetchRequests();
                 } catch (error) {
                     Swal.fire('এরর!', error.response?.data?.message || 'স্ট্যাটাস আপডেট করা সম্ভব হয়নি।', 'error');
                 }
@@ -66,7 +64,7 @@ const AllDonationRequests = () => {
         });
     };
 
-    // --- ডিলিট হ্যান্ডেলার ---
+    // --- ডিলিট লজিক (অপরিবর্তিত) ---
     const handleDelete = (id, recipientName) => {
         Swal.fire({
             title: "নিশ্চিত?",
@@ -79,7 +77,6 @@ const AllDonationRequests = () => {
         }).then(async (result) => {
             if (result.isConfirmed) {
                 try {
-                    // নতুন Admin Delete রুট ব্যবহার করা
                     await axiosSecure.delete(`/api/v1/donation-requests/admin/${id}`); 
                     Swal.fire('ডিলিট সফল!', `অনুরোধটি সফলভাবে ডিলিট করা হয়েছে।`, 'success');
                     fetchRequests(); 
@@ -90,92 +87,128 @@ const AllDonationRequests = () => {
         });
     };
 
-
     if (isLoading) {
-        return <div className="text-center p-10"><span className="loading loading-spinner loading-lg text-red-600"></span></div>;
+        return <div className="text-center p-20 min-h-[50vh] flex items-center justify-center"><span className="loading loading-spinner loading-lg text-red-600"></span></div>;
     }
 
     return (
-        <div className="p-4 md:p-8 rounded-xl shadow-2xl bg-white">
-            <h1 className="text-3xl font-bold text-red-600 mb-6 border-b pb-2 flex items-center"><List className='mr-2' /> সব ডোনেশন অনুরোধ ম্যানেজমেন্ট ({requests.length})</h1>
+        <div className="p-2 md:p-8 bg-gray-50 min-h-screen">
+            <h1 className="text-xl md:text-3xl font-bold text-red-600 mb-6 border-b pb-2 flex items-center">
+                <List className='mr-2' /> সব ডোনেশন অনুরোধ ({requests.length})
+            </h1>
             
-            <div className="overflow-x-auto">
-                <table className="table w-full table-zebra">
+            {/* Desktop Table View (Visible on LG screens) */}
+            <div className="hidden lg:block overflow-x-auto bg-white rounded-xl shadow-md">
+                <table className="table w-full">
                     <thead>
-                        <tr className='text-gray-700 bg-gray-100'>
+                        <tr className='text-gray-700 bg-gray-100 uppercase text-xs'>
                             <th>#</th>
                             <th>রোগী ও রক্তের গ্রুপ</th>
                             <th>অবস্থান ও তারিখ</th>
                             <th>অনুরোধকারী</th>
-                            <th>ডোনার (যদি থাকে)</th>
+                            <th>ডোনার</th>
                             <th>স্ট্যাটাস</th>
-                            <th>অ্যাকশন</th>
+                            <th className="text-center">অ্যাকশন</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody className="divide-y">
                         {requests.map((req, index) => (
-                            <tr key={req._id}>
+                            <tr key={req._id} className="hover:bg-gray-50 transition-colors">
                                 <th>{index + 1}</th>
                                 <td>
-                                    <p className='font-semibold'>{req.recipientName}</p>
-                                    <p className='text-red-600 font-bold text-sm'>{req.bloodGroup}</p>
+                                    <p className='font-bold text-gray-800'>{req.recipientName}</p>
+                                    <span className='badge badge-ghost badge-sm font-bold text-red-600'>{req.bloodGroup}</span>
                                 </td>
                                 <td>
-                                    <p className='text-sm'>{req.recipientUpazila}, {req.recipientDistrict}</p>
-                                    <p className='text-xs text-gray-500'>{format(new Date(req.donationDate), 'dd MMM, yy')} ({req.donationTime})</p>
+                                    <p className='text-sm flex items-center gap-1'><MapPin size={12}/> {req.recipientUpazila}, {req.recipientDistrict}</p>
+                                    <p className='text-xs text-gray-500 mt-1 flex items-center gap-1'>
+                                        <Calendar size={12}/> {format(new Date(req.donationDate), 'dd MMM, yy')} <Clock size={12} className="ml-1"/> {req.donationTime}
+                                    </p>
                                 </td>
                                 <td>
-                                    <p className='font-semibold'>{req.requesterName || 'N/A'}</p>
-                                    <p className='text-sm text-gray-500'>{req.requesterEmail}</p>
+                                    <p className='text-sm font-medium'>{req.requesterName || 'N/A'}</p>
+                                    <p className='text-xs text-gray-400'>{req.requesterEmail}</p>
                                 </td>
                                 <td>
                                     <p className='text-sm'>{req.donorName || 'N/A'}</p>
-                                    <p className='text-xs text-gray-500'>{req.donorEmail || ''}</p>
+                                    <p className='text-[10px] text-gray-400'>{req.donorEmail || ''}</p>
                                 </td>
                                 <td>
-                                    <div className={`badge text-xs font-semibold text-white ${getStatusClass(req.requestStatus)}`}>
+                                    <div className={`badge text-white font-bold border-none ${getStatusClass(req.requestStatus)}`}>
                                         {req.requestStatus.toUpperCase()}
                                     </div>
                                 </td>
-                                <td className='space-y-1'>
-                                    {/* Done বাটন */}
+                                <td className='flex flex-col gap-1'>
                                     {(req.requestStatus === 'pending' || req.requestStatus === 'inprogress') && (
-                                        <button 
-                                            onClick={() => handleStatusUpdate(req._id, req.requestStatus, 'done', req.recipientName)}
-                                            className="btn btn-xs btn-success text-white w-full" 
-                                            disabled={req.requestStatus === 'done'}
-                                        >
-                                            <CheckCircle size={12} /> ডন
-                                        </button>
+                                        <div className="flex gap-1">
+                                            <button onClick={() => handleStatusUpdate(req._id, req.requestStatus, 'done', req.recipientName)} className="btn btn-xs btn-success text-white flex-1"><CheckCircle size={12} /> ডন</button>
+                                            <button onClick={() => handleStatusUpdate(req._id, req.requestStatus, 'canceled', req.recipientName)} className="btn btn-xs btn-warning text-white flex-1"><XCircle size={12} /> বাতিল</button>
+                                        </div>
                                     )}
-                                    
-                                    {/* Cancel বাটন */}
-                                    {(req.requestStatus === 'pending' || req.requestStatus === 'inprogress') && (
-                                        <button 
-                                            onClick={() => handleStatusUpdate(req._id, req.requestStatus, 'canceled', req.recipientName)}
-                                            className="btn btn-xs btn-warning text-white w-full" 
-                                            disabled={req.requestStatus === 'canceled'}
-                                        >
-                                            <XCircle size={12} /> বাতিল
-                                        </button>
-                                    )}
-                                    
-                                    {/* ডিলিট বাটন */}
-                                    <button 
-                                        onClick={() => handleDelete(req._id, req.recipientName)}
-                                        className="btn btn-xs btn-error text-white w-full" 
-                                    >
-                                        <Trash2 size={12} /> ডিলিট (Admin)
-                                    </button>
+                                    <button onClick={() => handleDelete(req._id, req.recipientName)} className="btn btn-xs btn-error text-white w-full"><Trash2 size={12} /> ডিলিট (Admin)</button>
                                 </td>
                             </tr>
                         ))}
                     </tbody>
                 </table>
             </div>
+
+            {/* Mobile Card Layout (Visible on Small/Medium screens) */}
+            <div className="lg:hidden grid grid-cols-1 gap-4">
+                {requests.map((req, index) => (
+                    <div key={req._id} className="bg-white p-4 rounded-2xl shadow-sm border-l-4 border-red-500 relative">
+                        <span className="absolute top-2 right-4 text-xs font-bold text-gray-300">#{index + 1}</span>
+                        
+                        <div className="flex justify-between items-start mb-3">
+                            <div>
+                                <h3 className="font-bold text-gray-800 text-lg flex items-center gap-2">
+                                    {req.recipientName} 
+                                    <span className="text-red-600 bg-red-50 px-2 py-0.5 rounded text-sm">{req.bloodGroup}</span>
+                                </h3>
+                                <div className={`badge badge-sm text-[10px] font-bold text-white mt-1 ${getStatusClass(req.requestStatus)}`}>
+                                    {req.requestStatus.toUpperCase()}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="space-y-2 text-sm text-gray-600 mb-4">
+                            <p className="flex items-center gap-2"><MapPin size={14} className="text-gray-400"/> {req.recipientUpazila}, {req.recipientDistrict}</p>
+                            <p className="flex items-center gap-2"><Calendar size={14} className="text-gray-400"/> {format(new Date(req.donationDate), 'dd MMM, yyyy')} | <Clock size={14}/> {req.donationTime}</p>
+                            <div className="pt-2 border-t mt-2">
+                                <p className="text-[10px] uppercase font-bold text-gray-400">অনুরোধকারী:</p>
+                                <p className="font-medium">{req.requesterName} ({req.requesterEmail})</p>
+                            </div>
+                            {req.donorName && (
+                                <div className="pt-1">
+                                    <p className="text-[10px] uppercase font-bold text-gray-400">ডোনার:</p>
+                                    <p className="text-green-600 font-medium">{req.donorName}</p>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Mobile Action Buttons */}
+                        <div className="grid grid-cols-2 gap-2 border-t pt-3">
+                            {(req.requestStatus === 'pending' || req.requestStatus === 'inprogress') && (
+                                <>
+                                    <button onClick={() => handleStatusUpdate(req._id, req.requestStatus, 'done', req.recipientName)} className="btn btn-sm btn-success text-white"><CheckCircle size={14} /> ডন</button>
+                                    <button onClick={() => handleStatusUpdate(req._id, req.requestStatus, 'canceled', req.recipientName)} className="btn btn-sm btn-warning text-white"><XCircle size={14} /> বাতিল</button>
+                                </>
+                            )}
+                            <button onClick={() => handleDelete(req._id, req.recipientName)} className="btn btn-sm btn-error text-white col-span-2 mt-1">
+                                <Trash2 size={14} /> ডিলিট (Admin)
+                            </button>
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            {requests.length === 0 && (
+                <div className="text-center py-20 bg-white rounded-xl mt-4">
+                    <p className="text-gray-500">কোনো ডোনেশন অনুরোধ পাওয়া যায়নি।</p>
+                </div>
+            )}
         </div>
     );
 };
 
 export default AllDonationRequests;
-
