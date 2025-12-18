@@ -1,16 +1,36 @@
-# React + Vite
+# BloodSync - Digital Blood Donation Platform
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+BloodSync is a specialized web application designed to streamline the process of blood donation in Bangladesh. It connects voluntary blood donors with recipients through an intuitive, real-time interface, making life-saving contributions more accessible than ever.
 
-Currently, two official plugins are available:
+## 🌟 Project Overview
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+This platform serves as a centralized hub where users can register as donors, request specific blood groups, and find nearby volunteers during emergencies. The focus is on speed, reliability, and ease of use.
 
-## React Compiler
+## ✨ Core Features
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+* **Donor Discovery:** Advanced search functionality to find donors based on blood group, district, and upazila.
+* **Urgent Blood Requests:** A public board for posting and managing immediate blood needs.
+* **User Profiles:** Detailed donor profiles with availability status and last donation records.
+* **Dynamic Dashboard:** Separate interfaces for users and admins to manage requests and site content.
+* **Responsive Design:** Fully optimized for mobile, tablet, and desktop views using modern CSS frameworks.
+* **Security:** Role-based access control and secure authentication for all users.
 
-## Expanding the ESLint configuration
+## 🛠️ Technology Stack
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+* **Frontend Library:** React.js
+* **Routing:** React Router DOM
+* **Styling:** Tailwind CSS & DaisyUI
+* **Icons:** Lucide React
+* **Authentication:** Firebase Auth
+* **State Management:** Context API & Custom Hooks
+
+## 📂 Project Structure
+
+```text
+src/
+├── components/     # Reusable UI components (Navbar, Footer, Cards)
+├── hooks/          # Custom React hooks (useAuth, etc.)
+├── pages/          # Individual page components (Home, Search, Dashboard)
+├── providers/      # Context providers for global state
+├── assets/         # Static images and styles
+└── routes/         # Application routing logic
