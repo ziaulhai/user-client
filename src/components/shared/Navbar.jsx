@@ -154,7 +154,7 @@ const Navbar = () => {
                 {/* Navbar End: User Actions */}
                 <div className="navbar-end space-x-3"> 
                     <NavLink to="/donate" className="btn bg-red-600 border-none text-white hover:bg-red-700 hidden md:flex shadow-lg shadow-red-200">
-                        ডোনেট করুন
+                        ডোনেশন রিকুয়েস্ট
                     </NavLink>
 
                     {user ? (
