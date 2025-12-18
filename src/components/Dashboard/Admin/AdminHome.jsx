@@ -4,8 +4,6 @@ import useAuth from '../../../hooks/useAuth';
 import useAxiosSecure from '../../../hooks/useAxiosSecure';
 import { Users, Droplet, CheckCircle, Clock, Shield, XCircle, DollarSign, LayoutDashboard } from 'lucide-react'; 
 
-// কার্ডের ডেটা স্ট্রাকচার এবং আইকন
-// লজিক এবং ডেটা কি (Key) আগের মতোই রাখা হয়েছে
 const getStatCards = (stats) => [
     {
         title: 'মোট ব্যবহারকারী',
@@ -55,7 +53,6 @@ const AdminHome = () => {
     const { user } = useAuth();
     const axiosSecure = useAxiosSecure();
 
-    // ১. অ্যাডমিন পরিসংখ্যান ডেটা ফেচ করা (পাথ অপরিবর্তিত)
     const { data: stats, isLoading: isStatsLoading } = useQuery({
         queryKey: ['adminStats'],
         queryFn: async () => {
@@ -76,9 +73,12 @@ const AdminHome = () => {
     const statCards = getStatCards(stats);
 
     return (
-        <div className="container mx-auto p-4 md:p-8 space-y-10">
-            {/* ওয়েলকাম সেকশন - উন্নত ডিজাইন */}
-            <div className="relative overflow-hidden bg-white p-6 md:p-10 rounded-2xl shadow-sm border border-gray-100">
+        // 🔥 ফিক্স: z-0 ব্যবহার করা হয়েছে যাতে এটি হেডারের (যা সাধারণত z-10 বা তার বেশি হয়) নিচে থাকে
+        <div className="container mx-auto p-4 md:p-8 space-y-10 relative z-0">
+            
+            {/* ওয়েলকাম সেকশন */}
+            {/* 🔥 ফিক্স: relative z-10 রাখা হয়েছে কিন্তু প্যারেন্ট z-0 এর ভেতরে, যা ওভারল্যাপিং কমাবে */}
+            <div className="relative overflow-hidden bg-white p-6 md:p-10 rounded-2xl shadow-sm border border-gray-100 mt-2">
                 <div className="relative z-10">
                     <div className="flex items-center gap-2 text-red-600 mb-2">
                         <LayoutDashboard size={20} />
@@ -128,7 +128,6 @@ const AdminHome = () => {
                             </div>
                         </div>
 
-                        {/* কার্ড ব্যাকগ্রাউন্ড ডেকোরেশন আইকন */}
                         <card.icon 
                             size={100} 
                             className="absolute -bottom-4 -right-4 text-white/10 rotate-12 transition-transform group-hover:scale-110 duration-500" 
@@ -136,8 +135,6 @@ const AdminHome = () => {
                     </div>
                 ))}
             </div>
-            
-            {/* নিচের দিকে বাড়তি স্পেস বা ফুটার কন্টেন্ট চাইলে এখানে যোগ করা যাবে */}
         </div>
     );
 };
