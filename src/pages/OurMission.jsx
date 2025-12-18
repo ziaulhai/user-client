@@ -1,5 +1,6 @@
 import React from 'react';
 import { Target, Eye, Heart, Shield, Globe, Award } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const OurMission = () => {
     const values = [
@@ -31,7 +32,7 @@ const OurMission = () => {
             <section className="relative py-20 bg-gray-900 text-white overflow-hidden">
                 <div className="absolute inset-0 opacity-20">
                     <img 
-                        src="https://images.unsplash.com/photo-1536856789559-1cb4b46d7efc?auto=format&fit=crop&q=80&w=2070" 
+                        src="https://i.ibb.co.com/spkdJDXy/hero-blood-donate.jpg" 
                         alt="Background" 
                         className="w-full h-full object-cover"
                     />
@@ -95,7 +96,7 @@ const OurMission = () => {
                     <h2 className="text-3xl md:text-4xl font-bold mb-6">আপনি কি আমাদের সাথে যুক্ত হতে চান?</h2>
                     <p className="text-lg mb-10 opacity-90">আপনার এক ব্যাগ রক্ত বাঁচাতে পারে একটি পরিবার। আজই নিবন্ধিত হয়ে মানবতার সেবায় অংশ নিন।</p>
                     <div className="flex flex-wrap justify-center gap-4">
-                        <button className="btn bg-white text-red-600 hover:bg-gray-100 border-none px-8 font-bold">রক্তদাতা হিসেবে যোগ দিন</button>
+                        <Link to="/register" className="text-red-600 font-semibold hover:underline ml-1"><button className="btn bg-white text-red-600 hover:bg-gray-100 border-none px-8 font-bold">রক্তদাতা হিসেবে যোগ দিন</button></Link>
                         <button className="btn btn-outline border-white text-white hover:bg-white hover:text-red-600 px-8 font-bold">আরও জানুন</button>
                     </div>
                 </div>
