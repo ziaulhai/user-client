@@ -3,9 +3,9 @@ import { useForm } from 'react-hook-form';
 import useAuth from '../../../hooks/useAuth';
 import useAxiosSecure from '../../../hooks/useAxiosSecure';
 import Swal from 'sweetalert2';
-import { FileText, Type, MessageSquare, Save, User, Upload, CheckCircle } from 'lucide-react';
+import { FileText, Type, MessageSquare, Save, User, Upload, CheckCircle, Mail } from 'lucide-react';
 
-// ImgBB API URL
+// ImgBB API URL (অপরিবর্তিত)
 const image_hosting_api = `https://api.imgbb.com/1/upload?key=${import.meta.env.VITE_IMGBB_API_KEY}`;
 
 const CreateBlogPost = () => {
@@ -22,7 +22,7 @@ const CreateBlogPost = () => {
         formState: { isSubmitting } 
     } = useForm();
 
-    // ১. ছবি অটো-আপলোড হ্যান্ডেলার
+    // ১. ছবি অটো-আপলোড হ্যান্ডেলার (লজিক অপরিবর্তিত)
     const handleAutoImageUpload = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -41,7 +41,7 @@ const CreateBlogPost = () => {
             if (data.success) {
                 setImageUrl(data.data.display_url || data.data.url);
             } else {
-                Swal.fire("এরর!", "ছবি আপলোড ব্যর্থ হয়েছে।", "error");
+                Swal.fire("এরর!", "ছবি আপলোড ব্যর্থ হয়েছে।", "error");
             }
         } catch (error) {
             console.error("Image upload error:", error);
@@ -85,112 +85,140 @@ const CreateBlogPost = () => {
     };
 
     return (
-        <div className="p-4 md:p-8 rounded-xl shadow-2xl bg-white max-w-5xl mx-auto">
-            <h1 className="text-3xl font-bold text-red-600 mb-6 border-b pb-2 flex items-center">
-                <FileText className='mr-2' size={30} /> নতুন ব্লগ পোস্ট তৈরি করুন
-            </h1>
-
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-
-                <div className="form-control">
-                    <label className="label">
-                        <span className="label-text font-semibold flex items-center">
-                            <Type size={18} className='mr-1' /> পোস্টের শিরোনাম
-                        </span>
-                    </label>
-                    <input 
-                        type="text" 
-                        placeholder="শিরোনাম লিখুন (ঐচ্ছিক)" 
-                        className="input input-bordered w-full" 
-                        {...register("title")} 
-                    />
+        <div className="p-2 md:p-8 bg-gray-50 min-h-screen">
+            <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden">
+                {/* Header Section */}
+                <div className="bg-red-600 p-6 text-white">
+                    <h1 className="text-2xl md:text-3xl font-bold flex items-center justify-center md:justify-start">
+                        <FileText className='mr-3' size={32} /> নতুন ব্লগ পোস্ট তৈরি করুন
+                    </h1>
+                    <p className="text-red-100 text-sm mt-2 text-center md:text-left">আপনার জ্ঞান এবং অভিজ্ঞতা সবার সাথে শেয়ার করুন</p>
                 </div>
 
-                {/* থাম্বনেইল ছবি - সংশোধিত onChange */}
-                <div className="form-control">
-                    <label className="label">
-                        <span className="label-text font-semibold flex items-center">
-                            <Upload size={18} className='mr-1' /> থাম্বনেইল ছবি (ঐচ্ছিক)
-                        </span>
-                    </label>
-                    <input 
-                        type="file" 
-                        accept="image/*" 
-                        className="file-input file-input-bordered file-input-error w-full" 
-                        {...register("thumbnail", {
-                            onChange: (e) => { handleAutoImageUpload(e) }
-                        })}
-                    />
+                <form onSubmit={handleSubmit(onSubmit)} className="p-4 md:p-8 space-y-6">
                     
-                    <div className="mt-2">
-                        {uploading && (
-                            <div className="flex items-center gap-2 text-blue-600 text-sm">
-                                <span className="loading loading-spinner loading-xs"></span>
-                                ছবি আপলোড হচ্ছে...
-                            </div>
-                        )}
-                        {!uploading && imageUrl && (
-                            <div className="flex items-center gap-2">
-                                <div className="text-green-600 text-sm font-semibold flex items-center">
-                                    <CheckCircle size={16} className="mr-1" /> ছবি আপলোড সফল!
-                                </div>
-                                <img src={imageUrl} alt="Preview" className="w-16 h-10 object-cover rounded border" />
-                            </div>
-                        )}
+                    {/* শিরোনাম কার্ড */}
+                    <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                        <label className="label pt-0">
+                            <span className="label-text font-bold text-gray-700 flex items-center text-base">
+                                <Type size={20} className='mr-2 text-red-600' /> পোস্টের শিরোনাম
+                            </span>
+                        </label>
+                        <input 
+                            type="text" 
+                            placeholder="একটি আকর্ষণীয় শিরোনাম দিন..." 
+                            className="input input-bordered w-full focus:ring-2 focus:ring-red-500 transition-all border-gray-300" 
+                            {...register("title")} 
+                        />
                     </div>
-                </div>
 
-                <div className="form-control">
-                    <label className="label">
-                        <span className="label-text font-semibold flex items-center">
-                            <MessageSquare size={18} className='mr-1' /> বিস্তারিত কনটেন্ট
-                        </span>
-                    </label>
-                    <textarea 
-                        className="textarea textarea-bordered h-48 w-full" 
-                        placeholder="আপনার কনটেন্ট লিখুন (ঐচ্ছিক)..." 
-                        {...register("content")}
-                    ></textarea>
-                </div>
+                    {/* ছবি আপলোড কার্ড */}
+                    <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                        <label className="label pt-0">
+                            <span className="label-text font-bold text-gray-700 flex items-center text-base">
+                                <Upload size={20} className='mr-2 text-red-600' /> থাম্বনেইল ছবি
+                            </span>
+                        </label>
+                        <div className="flex flex-col md:flex-row items-center gap-4">
+                            <input 
+                                type="file" 
+                                accept="image/*" 
+                                className="file-input file-input-bordered file-input-error w-full md:flex-1" 
+                                {...register("thumbnail", {
+                                    onChange: (e) => { handleAutoImageUpload(e) }
+                                })}
+                            />
+                            {/* Preview section */}
+                            <div className="w-full md:w-auto flex justify-center">
+                                {uploading ? (
+                                    <div className="flex items-center gap-2 text-blue-600 text-sm font-medium animate-pulse">
+                                        <span className="loading loading-spinner loading-sm"></span> আপলোড হচ্ছে...
+                                    </div>
+                                ) : imageUrl ? (
+                                    <div className="relative group">
+                                        <img src={imageUrl} alt="Preview" className="w-24 h-16 object-cover rounded-lg border-2 border-green-500 shadow-md" />
+                                        <CheckCircle size={18} className="absolute -top-2 -right-2 text-green-600 bg-white rounded-full" />
+                                    </div>
+                                ) : (
+                                    <div className="w-24 h-16 bg-gray-200 rounded-lg flex items-center justify-center text-gray-400 border-2 border-dashed">
+                                        No Image
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="form-control">
-                        <label className="label"><span className="label-text font-semibold flex items-center"><Save size={18} className='mr-1' /> স্ট্যাটাস</span></label>
-                        <select 
-                            className="select select-bordered" 
-                            {...register("status")}
-                            defaultValue="draft" 
+                    {/* বিস্তারিত কনটেন্ট কার্ড */}
+                    <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                        <label className="label pt-0">
+                            <span className="label-text font-bold text-gray-700 flex items-center text-base">
+                                <MessageSquare size={20} className='mr-2 text-red-600' /> বিস্তারিত কনটেন্ট
+                            </span>
+                        </label>
+                        <textarea 
+                            className="textarea textarea-bordered h-48 w-full focus:ring-2 focus:ring-red-500 border-gray-300" 
+                            placeholder="এখানে আপনার মনের মাধুরী মিশিয়ে লিখুন..." 
+                            {...register("content")}
+                        ></textarea>
+                    </div>
+
+                    {/* সেটিংস গ্রিড (Responsive) */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                            <label className="label pt-0">
+                                <span className="label-text font-bold text-gray-700 flex items-center">
+                                    <Save size={18} className='mr-2 text-red-600' /> স্ট্যাটাস
+                                </span>
+                            </label>
+                            <select 
+                                className="select select-bordered w-full border-gray-300 focus:ring-red-500" 
+                                {...register("status")}
+                                defaultValue="draft" 
+                            >
+                                <option value="draft">Draft (খসড়া)</option>
+                                <option value="published">Published (প্রকাশিত)</option>
+                            </select>
+                        </div>
+
+                        <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                            <label className="label pt-0">
+                                <span className="label-text font-bold text-gray-700 flex items-center">
+                                    <User size={18} className='mr-2 text-red-600' /> লেখক
+                                </span>
+                            </label>
+                            <div className="flex items-center gap-2 p-3 bg-white border border-gray-200 rounded-lg text-gray-600">
+                                <User size={16} /> {user?.displayName || 'Admin'}
+                            </div>
+                        </div>
+
+                        <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                            <label className="label pt-0">
+                                <span className="label-text font-bold text-gray-700 flex items-center">
+                                    <Mail size={18} className='mr-2 text-red-600' /> ইমেল
+                                </span>
+                            </label>
+                            <div className="flex items-center gap-2 p-3 bg-white border border-gray-200 rounded-lg text-gray-600 overflow-hidden text-ellipsis whitespace-nowrap">
+                                <Mail size={16} /> {user?.email || ''}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Submit Button */}
+                    <div className="pt-4">
+                        <button 
+                            type="submit" 
+                            disabled={isSubmitting || uploading} 
+                            className={`btn bg-red-600 text-white text-lg hover:bg-red-700 border-none w-full shadow-lg transform transition active:scale-95 ${isSubmitting ? 'loading' : ''}`}
                         >
-                            <option value="draft">Draft (খসড়া)</option>
-                            <option value="published">Published (প্রকাশিত)</option>
-                        </select>
+                            {isSubmitting ? (
+                                'প্রসেস হচ্ছে...'
+                            ) : (
+                                <span className="flex items-center gap-2"><Save size={20} /> ব্লগ পোস্ট তৈরি করুন</span>
+                            )}
+                        </button>
                     </div>
-
-                    <div className="form-control">
-                        <label className="label"><span className="label-text font-semibold flex items-center"><User size={18} className='mr-1' /> লেখক</span></label>
-                        <input type="text" value={user?.displayName || 'Admin'} readOnly className="input input-bordered bg-gray-100" />
-                    </div>
-
-                    <div className="form-control">
-                        <label className="label"><span className="label-text font-semibold flex items-center"><User size={18} className='mr-1' /> ইমেল</span></label>
-                        <input type="email" value={user?.email || ''} readOnly className="input input-bordered bg-gray-100" />
-                    </div>
-                </div>
-
-                <div className="form-control pt-4">
-                    <button 
-                        type="submit" 
-                        disabled={isSubmitting || uploading} 
-                        className="btn bg-red-600 text-white text-lg hover:bg-red-700 w-full"
-                    >
-                        {isSubmitting ? (
-                            <><span className="loading loading-spinner"></span> প্রসেস হচ্ছে...</>
-                        ) : (
-                            'ব্লগ পোস্ট তৈরি করুন'
-                        )}
-                    </button>
-                </div>
-            </form>
+                </form>
+            </div>
         </div>
     );
 };
